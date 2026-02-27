@@ -1,0 +1,38 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class MainMenuController : MonoBehaviour
+{
+    public GameObject optionsMenu;
+
+    void Start()
+    {
+        optionsMenu.SetActive(false);
+    }
+
+    public void Options()
+    {
+        optionsMenu.SetActive(true);
+    }
+
+    public void Back()
+    {
+        optionsMenu.SetActive(false);
+    }
+
+    public void ExitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
+    
+    public void LoadGameScene()
+    {
+        SceneManager.LoadScene("GameScene");
+    }
+}
