@@ -89,17 +89,23 @@ public class PlayerData : NetworkBehaviour
         }
     }
 
-    public void RollDice()
+    public bool CanRollNow()
     {
-        if (!Object.HasStateAuthority) return;
+        if (!Object.HasStateAuthority) return false;
 
         var gameState = FindObjectOfType<GameStateManager>();
-        if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return;
+        if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return false;
 
-        if (RollCount >= 8) return;
-        if (AreAllSlotsFilled()) return;
+        if (RollCount >= 8) return false;
+        if (AreAllSlotsFilled()) return false;
 
-        int result = Random.Range(1, 7); // 임시: 나중에 실제 3D 주사위 결과로 교체 예정
+        return true;
+    }
+
+    public void RollDice(int result)
+    {
+        if (!CanRollNow()) return; // 안전장치: 여기서도 한 번 더 확인
+
         SaveToSlot(result);
         RollCount++;
 

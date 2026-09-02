@@ -15,6 +15,9 @@ public class GameUIManager : MonoBehaviour
 
     public ComboButtonHandler[] comboButtons; // 10개를 인스펙터에서 연결
 
+    [Header("3D 주사위")]
+    public DiceController3D diceController;
+
     private GameStateManager _gameState;
     private NetworkRunner _runner;
 
@@ -75,11 +78,9 @@ public class GameUIManager : MonoBehaviour
 
     void OnRollDiceClicked()
     {
-        var myData = FindMyPlayerData();
-        if (myData != null)
+        if (diceController != null)
         {
-            myData.RollDice();
-            RefreshMySlots();
+            diceController.RollDice();
         }
     }
 
