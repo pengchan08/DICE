@@ -15,6 +15,12 @@ public class DiceCheckZone3D : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (_diceController == null)
+        {
+            _diceController = FindObjectOfType<DiceController3D>();
+            if (_diceController == null) return; // 아직 못 찾았으면 이번 프레임은 건너뜀
+        }
+
         diceVelocity = _diceController.diceVelocity;
 
         if (diceVelocity.magnitude > 0.1f)
@@ -49,9 +55,18 @@ public class DiceCheckZone3D : MonoBehaviour
                     .Where(p => p != null && p.Object != null && p.Object.IsValid)
                     .FirstOrDefault(p => p.Object.HasStateAuthority);
 
-                if (myData != null)
+                if (myData == null) return;
+
+                var gameState = FindObjectOfType<GameStateManager>();
+                bool isFirstTurnPhase = gameState == null || !gameState.FirstTurnDecided;
+
+                if (isFirstTurnPhase)
                 {
-                    myData.RollDice(number); // 실제 결정된 숫자를 전달
+                    myData.SetStartRoll(number); // 선공 결정용: 슬롯에 안 들어감
+                }
+                else
+                {
+                    myData.RollDice(number); // 진짜 게임 굴리기: 슬롯에 저장됨
                 }
             }
         }

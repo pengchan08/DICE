@@ -71,12 +71,25 @@ public class PlayerData : NetworkBehaviour
         }
     }
 
-    public void RollForFirstTurn()
+    public bool CanRollForFirstTurn()
     {
-        if (Object.HasStateAuthority)
+        if (!Object.HasStateAuthority) return false;
+        return StartRoll == 0;
+    }
+
+    public void SetStartRoll(int result)
+    {
+        if (!Object.HasStateAuthority) return;
+        StartRoll = result;
+        Debug.Log($"[선공 굴리기] {PlayerName}: {result}");
+    }
+
+    void TriggerPhysicalReroll()
+    {
+        var diceController = FindObjectOfType<DiceController3D>();
+        if (diceController != null)
         {
-            StartRoll = Random.Range(1, 7);
-            Debug.Log($"[선공 굴리기] {PlayerName}: {StartRoll}");
+            diceController.RollForFirstTurn();
         }
     }
 
@@ -85,7 +98,7 @@ public class PlayerData : NetworkBehaviour
         if (Object.HasStateAuthority)
         {
             StartRoll = 0;
-            Invoke(nameof(RollForFirstTurn), 0.5f); // 살짝 텀 두고 재도전
+            Invoke(nameof(TriggerPhysicalReroll), 0.5f);
         }
     }
 

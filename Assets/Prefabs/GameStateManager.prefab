@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6250875930290839435}
   - component: {fileID: 3421431125220276881}
-  - component: {fileID: 3511066764793428741}
+  - component: {fileID: -5852834245472268254}
   m_Layer: 0
   m_Name: GameStateManager
   m_TagString: Untagged
@@ -45,14 +45,14 @@ MonoBehaviour:
   m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SortKey: 154413424
+  SortKey: 1756936979
   ObjectInterest: 1
   Flags: 262145
   NestedObjects: []
   NetworkedBehaviours:
-  - {fileID: 3511066764793428741}
+  - {fileID: -5852834245472268254}
   ForceRemoteRenderTimeframe: 0
---- !u!114 &3511066764793428741
+--- !u!114 &-5852834245472268254
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -61,8 +61,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 7012624036544023681}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bbc18608b86a9894e8e32c55f01f8652, type: 3}
+  m_Script: {fileID: 11500000, guid: c213d35b41ba848499a5dbb57a8941a1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _FirstTurnDecided:
+    _value: 0
+  _RerollInProgress:
+    _value: 0
+  _GameEnded:
     _value: 0

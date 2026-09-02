@@ -158,11 +158,10 @@ public class WaitingRoomManager : MonoBehaviour
             runner.Spawn(gameStateManagerPrefab, Vector3.zero, Quaternion.identity);
         }
 
-        // 방장/참가자 모두 각자 자기 선공 결정 주사위를 굴림
-        var myPlayerData = FindMyPlayerData();
-        if (myPlayerData != null)
+        var diceController = FindObjectOfType<DiceController3D>();
+        if (diceController != null)
         {
-            myPlayerData.RollForFirstTurn();
+            diceController.RollForFirstTurn();
         }
     }
 

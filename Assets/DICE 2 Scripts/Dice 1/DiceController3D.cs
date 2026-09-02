@@ -28,10 +28,22 @@ public class DiceController3D : MonoBehaviour
     {
         var myData = FindMyPlayerData();
         if (myData == null) return;
-
-        // 내 턴인지, 굴릴 수 있는 상태인지는 PlayerData가 판단
         if (!myData.CanRollNow()) return;
 
+        DoPhysicalRoll();
+    }
+
+    public void RollForFirstTurn()
+    {
+        var myData = FindMyPlayerData();
+        if (myData == null) return;
+        if (!myData.CanRollForFirstTurn()) return;
+
+        DoPhysicalRoll();
+    }
+
+    void DoPhysicalRoll()
+    {
         if (audioSource != null && diceRollClip != null)
         {
             audioSource.PlayOneShot(diceRollClip);
