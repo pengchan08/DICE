@@ -14255,6 +14255,8 @@ MonoBehaviour:
   - {fileID: 654721354}
   - {fileID: 121044098}
   diceController: {fileID: 317277513}
+  player1ScoreText: {fileID: 1070143264}
+  player2ScoreText: {fileID: 202828418}
 --- !u!1 &2099160105
 GameObject:
   m_ObjectHideFlags: 0

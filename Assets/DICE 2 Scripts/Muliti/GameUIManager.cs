@@ -18,6 +18,10 @@ public class GameUIManager : MonoBehaviour
     [Header("3D 주사위")]
     public DiceController3D diceController;
 
+    [Header("점수 표시")]
+    public Text player1ScoreText;
+    public Text player2ScoreText;
+
     private GameStateManager _gameState;
     private NetworkRunner _runner;
 
@@ -73,6 +77,30 @@ public class GameUIManager : MonoBehaviour
         foreach (var combo in comboButtons)
         {
             combo.Refresh(myData, isMyTurn);
+        }
+
+        RefreshScores();
+    }
+
+    void RefreshScores()
+    {
+        var players = FindObjectsOfType<PlayerData>()
+            .Where(p => p != null && p.Object != null && p.Object.IsValid)
+            .ToList();
+
+        if (players.Count < 1) return;
+
+        // 방장을 항상 Player1 자리에, 참가자를 Player2 자리에 표시 (화면에서 위치가 안 바뀌도록)
+        var p1 = players.FirstOrDefault(p => p.IsHost);
+        var p2 = players.FirstOrDefault(p => !p.IsHost);
+
+        if (p1 != null)
+        {
+            player1ScoreText.text = $"{p1.PlayerName} : {p1.TotalScore}점";
+        }
+        if (p2 != null)
+        {
+            player2ScoreText.text = $"{p2.PlayerName} : {p2.TotalScore}점";
         }
     }
 
