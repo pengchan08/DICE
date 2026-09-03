@@ -11,9 +11,7 @@ public class PlayerData : NetworkBehaviour
     [Networked, Capacity(5)] public NetworkArray<int> DiceSlots => default;
     [Networked] public int RollCount { get; set; }
     [Networked] public int TotalScore { get; set; }
-
-    // 조합 12개는 너무 많으니, 사용 여부를 비트로 관리 (0번=Ones ... 9번=Yacht)
-    [Networked, Capacity(10)] public NetworkArray<NetworkBool> UsedCombos => default;
+    [Networked, Capacity(12)] public NetworkArray<NetworkBool> UsedCombos => default;
 
     private bool hasLoggedOnce = false;
 
@@ -167,6 +165,25 @@ public class PlayerData : NetworkBehaviour
         return score;
     }
 
+    public int GetChoiceScore()
+    {
+        int sum = 0;
+        for (int i = 0; i < 5; i++) sum += DiceSlots[i];
+        return Mathf.Min(sum, 30); // 최대 30점 제한
+    }
+
+    public int GetFourOfAKindScore()
+    {
+        var count = new int[7];
+        for (int i = 0; i < 5; i++) count[DiceSlots[i]]++;
+
+        for (int i = 1; i <= 6; i++)
+        {
+            if (count[i] >= 4) return Mathf.Min(i * 4, 24); // 최대 24점 제한
+        }
+        return 0;
+    }
+
     public int GetFullHouseScore()
     {
         var count = new int[7];
@@ -245,10 +262,12 @@ public class PlayerData : NetworkBehaviour
             case 3: return CalculateNumberScore(4);
             case 4: return CalculateNumberScore(5);
             case 5: return CalculateNumberScore(6);
-            case 6: return GetFullHouseScore();
-            case 7: return GetSmallStraightScore();
-            case 8: return GetBigStraightScore();
-            case 9: return GetYachtScore();
+            case 6: return GetChoiceScore();
+            case 7: return GetFourOfAKindScore();
+            case 8: return GetFullHouseScore();
+            case 9: return GetSmallStraightScore();
+            case 10: return GetBigStraightScore();
+            case 11: return GetYachtScore();
             default: return 0;
         }
     }
@@ -283,7 +302,7 @@ public class PlayerData : NetworkBehaviour
 
     public bool AreAllCombosUsed()
     {
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 12; i++)
         {
             if (!UsedCombos[i]) return false;
         }
