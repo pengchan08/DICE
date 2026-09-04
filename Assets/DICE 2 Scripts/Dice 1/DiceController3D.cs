@@ -16,12 +16,19 @@ public class DiceController3D : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         audioSource = GetComponent<AudioSource>();
-        checkZone = FindObjectOfType<DiceCheckZone3D>();
     }
 
     void Update()
     {
         diceVelocity = rb.velocity;
+    }
+
+    void EnsureCheckZone()
+    {
+        if (checkZone == null)
+        {
+            checkZone = FindObjectOfType<DiceCheckZone3D>();
+        }
     }
 
     public void RollDice()
@@ -44,6 +51,14 @@ public class DiceController3D : MonoBehaviour
 
     void DoPhysicalRoll()
     {
+        EnsureCheckZone(); // 추가: 굴리기 직전에 한 번 더 확인
+
+        if (checkZone == null)
+        {
+            Debug.LogError("DiceCheckZone3D를 찾을 수 없습니다. 씬에 체크존 오브젝트가 있는지, 활성화되어 있는지 확인해주세요.");
+            return;
+        }
+
         if (audioSource != null && diceRollClip != null)
         {
             audioSource.PlayOneShot(diceRollClip);
