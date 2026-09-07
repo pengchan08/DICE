@@ -108,7 +108,7 @@ public class GameUIManager : MonoBehaviour
     {
         if (diceController != null)
         {
-            diceController.RollDice();
+            DiceGroupController3D.Instance.RollNonHeldDice();
         }
     }
 

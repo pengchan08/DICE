@@ -116,6 +116,12 @@ public class GameStateManager : NetworkBehaviour
         {
             Debug.Log($"[선공 결정] {winnerData.PlayerName} 이(가) 선공입니다!");
         }
+
+        // 변경: 배열을 직접 안 들고, 씬에 있는 매니저를 찾아서 호출
+        if (DiceGroupController3D.Instance != null)
+        {
+            DiceGroupController3D.Instance.ActivateGameplayDice();
+        }
     }
 
     void OnCurrentTurnChanged()

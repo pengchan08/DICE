@@ -68,5 +68,12 @@ MonoBehaviour:
     _value: 0
   _RerollInProgress:
     _value: 0
+  _LastComparedP1Version: 0
+  _LastComparedP2Version: 0
   _GameEnded:
     _value: 0
+  gameplayDiceObjects:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}

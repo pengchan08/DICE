@@ -334,6 +334,22 @@ public class PlayerData : NetworkBehaviour
         HeldDice.Set(index, !HeldDice[index]);
     }
 
+    public void SetDiceResult(int diceIndex, int result)
+    {
+        if (!Object.HasStateAuthority) return;
+        if (diceIndex < 0 || diceIndex >= 5) return;
+
+        DiceSlots.Set(diceIndex, result);
+        Debug.Log($"[게임 주사위] {PlayerName}: 슬롯 {diceIndex} = {result}");
+    }
+
+    public void IncrementRollCount()
+    {
+        if (!Object.HasStateAuthority) return;
+        RollCount++;
+        Debug.Log($"[턴 굴리기] {PlayerName}: {RollCount}/{MaxRollsPerTurn}회");
+    }
+
     public bool CanRollThisTurn()
     {
         if (!Object.HasStateAuthority) return false;

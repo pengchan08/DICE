@@ -3,8 +3,10 @@ using System.Linq;
 
 public class DiceCheckZone3D : MonoBehaviour
 {
+    [Header("연결")]
+    public DiceController3D diceController;
+
     private Vector3 diceVelocity;
-    private DiceController3D _diceController;
     private bool hasScored = false;
     private bool canCheck = false;
     private bool hasStartedMoving = false;
@@ -15,21 +17,17 @@ public class DiceCheckZone3D : MonoBehaviour
 
     void Start()
     {
-        _diceController = FindObjectOfType<DiceController3D>();
+        diceController = FindObjectOfType<DiceController3D>();
     }
 
     void FixedUpdate()
     {
-        if (_diceController == null)
-        {
-            _diceController = FindObjectOfType<DiceController3D>();
-            if (_diceController == null) return;
-        }
+        if (diceController == null) return;
 
-        diceVelocity = _diceController.diceVelocity;
+        diceVelocity = diceController.diceVelocity;
 
         bool isMoving = diceVelocity.magnitude > velocityThreshold
-            || _diceController.diceAngularVelocity.magnitude > velocityThreshold;
+                         || diceController.diceAngularVelocity.magnitude > velocityThreshold;
 
         if (isMoving)
         {
@@ -45,6 +43,11 @@ public class DiceCheckZone3D : MonoBehaviour
 
     void OnTriggerStay(Collider col)
     {
+        if (Time.frameCount % 60 == 0) // 추가: 1초에 한 번 정도만 로그
+        {
+            Debug.Log($"[진단] {gameObject.name} OnTriggerStay 진입, canCheck={canCheck}, hasStartedMoving={hasStartedMoving}, stillTimer={stillTimer:F2}");
+        }
+
         if (!canCheck) return;
         if (!hasStartedMoving) return;
 
@@ -68,6 +71,8 @@ public class DiceCheckZone3D : MonoBehaviour
 
             if (number != 0)
             {
+                Debug.Log($"[진단] 감지된 콜라이더={col.gameObject.name}, 계산된 숫자={number}");
+
                 hasScored = true;
                 canCheck = false;
 
@@ -86,16 +91,17 @@ public class DiceCheckZone3D : MonoBehaviour
                 }
                 else
                 {
-                    myData.RollDice(number);
+                    DiceGroupController3D.Instance.OnDieLanded(diceController.diceIndex, number);
                 }
 
-                _diceController.NotifyRollFinished();
+                diceController.NotifyRollFinished();
             }
         }
     }
 
     public void EnableCheck()
     {
+        Debug.Log("[진단] EnableCheck 호출됨");
         canCheck = true;
         hasStartedMoving = false;
         hasScored = false;
