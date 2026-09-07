@@ -14,6 +14,7 @@ public class DiceCheckZone3D : MonoBehaviour
     private const float velocityThreshold = 0.05f;
     private const float requiredStillTime = 0.3f;
     private float stillTimer = 0f;
+    private bool hasLoggedTriggerOnce = false;
 
     void Start()
     {
@@ -43,18 +44,14 @@ public class DiceCheckZone3D : MonoBehaviour
 
     void OnTriggerStay(Collider col)
     {
-        if (Time.frameCount % 60 == 0) // 추가: 1초에 한 번 정도만 로그
+        if (!hasLoggedTriggerOnce) // 추가: 이번 굴림에서 딱 한 번만 찍음
         {
-            Debug.Log($"[진단] {gameObject.name} OnTriggerStay 진입, canCheck={canCheck}, hasStartedMoving={hasStartedMoving}, stillTimer={stillTimer:F2}");
+            Debug.Log($"[진단] {gameObject.name}가 {col.gameObject.name}과 접촉함");
+            hasLoggedTriggerOnce = true;
         }
 
         if (!canCheck) return;
         if (!hasStartedMoving) return;
-
-        // if (Time.frameCount % 30 == 0)
-        // {
-        //     Debug.Log($"[진단] OnTriggerStay 진입: col={col.gameObject.name}, stillTimer={stillTimer:F2}, velocity={diceVelocity.magnitude:F3}");
-        // }
 
         if (stillTimer >= requiredStillTime && !hasScored)
         {
@@ -71,8 +68,6 @@ public class DiceCheckZone3D : MonoBehaviour
 
             if (number != 0)
             {
-                Debug.Log($"[진단] 감지된 콜라이더={col.gameObject.name}, 계산된 숫자={number}");
-
                 hasScored = true;
                 canCheck = false;
 
@@ -93,18 +88,16 @@ public class DiceCheckZone3D : MonoBehaviour
                 {
                     DiceGroupController3D.Instance.OnDieLanded(diceController.diceIndex, number);
                 }
-
-                diceController.NotifyRollFinished();
             }
         }
     }
 
     public void EnableCheck()
     {
-        Debug.Log("[진단] EnableCheck 호출됨");
         canCheck = true;
         hasStartedMoving = false;
         hasScored = false;
         stillTimer = 0f;
+        hasLoggedTriggerOnce = false;
     }
 }

@@ -35,11 +35,7 @@ public class DiceGroupController3D : MonoBehaviour
 
     public void RollNonHeldDice()
     {
-        if (pendingCount > 0)
-        {
-            Debug.LogWarning("[진단] 이전 굴림이 아직 끝나지 않음 - 재굴림 무시");
-            return;
-        }
+        if (pendingCount > 0) return;
 
         var myData = FindMyPlayerData();
         if (myData == null) return;
@@ -73,10 +69,6 @@ public class DiceGroupController3D : MonoBehaviour
         myData.SetDiceResult(diceIndex, number);
 
         pendingCount--;
-        if (pendingCount <= 0)
-        {
-            Debug.Log("[게임 주사위] 이번 굴림 전체 착지 완료");
-        }
     }
 
     public void ForceResolveDie(int diceIndex)
@@ -86,7 +78,6 @@ public class DiceGroupController3D : MonoBehaviour
 
         int fallbackValue = Random.Range(1, 7);
         myData.SetDiceResult(diceIndex, fallbackValue);
-        Debug.LogWarning($"[주사위 {diceIndex}] 강제 확정: {fallbackValue}");
 
         pendingCount--;
     }
