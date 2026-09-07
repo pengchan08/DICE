@@ -7,12 +7,15 @@ public class PlayerData : NetworkBehaviour
     [Networked] public NetworkBool IsReady { get; set; }
     [Networked] public NetworkBool IsHost { get; set; }
     [Networked] public int StartRoll { get; set; }
+    [Networked] public int StartRollVersion { get; set; }
 
     [Networked, Capacity(5)] public NetworkArray<int> DiceSlots => default;
+    [Networked, Capacity(5)] public NetworkArray<NetworkBool> HeldDice => default;
     [Networked] public int RollCount { get; set; }
     [Networked] public int TotalScore { get; set; }
     [Networked, Capacity(12)] public NetworkArray<NetworkBool> UsedCombos => default;
 
+    public const int MaxRollsPerTurn = 3;
     private bool hasLoggedOnce = false;
 
     public override void Spawned()
@@ -71,15 +74,19 @@ public class PlayerData : NetworkBehaviour
 
     public bool CanRollForFirstTurn()
     {
-        if (!Object.HasStateAuthority) return false;
+        if (!Object.HasStateAuthority)
+        {
+            return false;
+        }
         return StartRoll == 0;
     }
 
     public void SetStartRoll(int result)
     {
         if (!Object.HasStateAuthority) return;
+        if (StartRoll != 0) return;
         StartRoll = result;
-        Debug.Log($"[선공 굴리기] {PlayerName}: {result}");
+        StartRollVersion++;
     }
 
     void TriggerPhysicalReroll()
@@ -289,7 +296,11 @@ public class PlayerData : NetworkBehaviour
         UsedCombos.Set(comboIndex, true);
 
         // 다음 턴을 위해 슬롯/굴리기 횟수 초기화
-        for (int i = 0; i < 5; i++) DiceSlots.Set(i, 0);
+        for (int i = 0; i < 5; i++)
+        {
+            DiceSlots.Set(i, 0);
+            HeldDice.Set(i, false);
+        }
         RollCount = 0;
 
         Debug.Log($"[조합 선택] {PlayerName}: 조합 {comboIndex}번 선택, {score}점 획득 (총점: {TotalScore})");
@@ -307,5 +318,29 @@ public class PlayerData : NetworkBehaviour
             if (!UsedCombos[i]) return false;
         }
         return true;
+    }
+
+    public void ToggleHold(int index)
+    {
+        if (!Object.HasStateAuthority) return;
+
+        var gameState = FindObjectOfType<GameStateManager>();
+        if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return;
+
+        if (index < 0 || index >= 5) return;
+        if (DiceSlots[index] == 0) return;
+        if (RollCount == 0) return;
+
+        HeldDice.Set(index, !HeldDice[index]);
+    }
+
+    public bool CanRollThisTurn()
+    {
+        if (!Object.HasStateAuthority) return false;
+
+        var gameState = FindObjectOfType<GameStateManager>();
+        if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return false;
+
+        return RollCount < MaxRollsPerTurn;
     }
 }

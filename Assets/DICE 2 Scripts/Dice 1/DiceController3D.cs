@@ -5,6 +5,9 @@ public class DiceController3D : MonoBehaviour
 {
     private Rigidbody rb;
     public Vector3 diceVelocity;
+    public Vector3 diceAngularVelocity;
+
+    public bool IsRolling { get; private set; }
 
     [Header("Sound")]
     public AudioClip diceRollClip;
@@ -21,6 +24,7 @@ public class DiceController3D : MonoBehaviour
     void Update()
     {
         diceVelocity = rb.velocity;
+        diceAngularVelocity = rb.angularVelocity;
     }
 
     void EnsureCheckZone()
@@ -33,6 +37,8 @@ public class DiceController3D : MonoBehaviour
 
     public void RollDice()
     {
+        if (IsRolling) return;
+
         var myData = FindMyPlayerData();
         if (myData == null) return;
         if (!myData.CanRollNow()) return;
@@ -42,22 +48,35 @@ public class DiceController3D : MonoBehaviour
 
     public void RollForFirstTurn()
     {
+        if (IsRolling)
+        {
+            return;
+        }
+
         var myData = FindMyPlayerData();
-        if (myData == null) return;
-        if (!myData.CanRollForFirstTurn()) return;
+        if (myData == null)
+        {
+            return;
+        }
+
+        if (!myData.CanRollForFirstTurn())
+        {
+            return;
+        }
 
         DoPhysicalRoll();
     }
 
     void DoPhysicalRoll()
     {
-        EnsureCheckZone(); // 추가: 굴리기 직전에 한 번 더 확인
+        EnsureCheckZone();
 
         if (checkZone == null)
         {
-            Debug.LogError("DiceCheckZone3D를 찾을 수 없습니다. 씬에 체크존 오브젝트가 있는지, 활성화되어 있는지 확인해주세요.");
             return;
         }
+
+        IsRolling = true;
 
         if (audioSource != null && diceRollClip != null)
         {
@@ -76,6 +95,11 @@ public class DiceController3D : MonoBehaviour
         rb.AddTorque(dirX, dirY, dirZ);
 
         checkZone.EnableCheck();
+    }
+
+    public void NotifyRollFinished()
+    {
+        IsRolling = false;
     }
 
     PlayerData FindMyPlayerData()

@@ -7,6 +7,11 @@ public class DiceCheckZone3D : MonoBehaviour
     private DiceController3D _diceController;
     private bool hasScored = false;
     private bool canCheck = false;
+    private bool hasStartedMoving = false;
+
+    private const float velocityThreshold = 0.05f;
+    private const float requiredStillTime = 0.3f;
+    private float stillTimer = 0f;
 
     void Start()
     {
@@ -18,22 +23,37 @@ public class DiceCheckZone3D : MonoBehaviour
         if (_diceController == null)
         {
             _diceController = FindObjectOfType<DiceController3D>();
-            if (_diceController == null) return; // 아직 못 찾았으면 이번 프레임은 건너뜀
+            if (_diceController == null) return;
         }
 
         diceVelocity = _diceController.diceVelocity;
 
-        if (diceVelocity.magnitude > 0.1f)
+        bool isMoving = diceVelocity.magnitude > velocityThreshold
+            || _diceController.diceAngularVelocity.magnitude > velocityThreshold;
+
+        if (isMoving)
         {
+            hasStartedMoving = true;
             hasScored = false;
+            stillTimer = 0f;
+        }
+        else
+        {
+            stillTimer += Time.fixedDeltaTime;
         }
     }
 
     void OnTriggerStay(Collider col)
     {
         if (!canCheck) return;
+        if (!hasStartedMoving) return;
 
-        if (diceVelocity == Vector3.zero && !hasScored)
+        // if (Time.frameCount % 30 == 0)
+        // {
+        //     Debug.Log($"[진단] OnTriggerStay 진입: col={col.gameObject.name}, stillTimer={stillTimer:F2}, velocity={diceVelocity.magnitude:F3}");
+        // }
+
+        if (stillTimer >= requiredStillTime && !hasScored)
         {
             int number = 0;
             switch (col.gameObject.name)
@@ -62,12 +82,14 @@ public class DiceCheckZone3D : MonoBehaviour
 
                 if (isFirstTurnPhase)
                 {
-                    myData.SetStartRoll(number); // 선공 결정용: 슬롯에 안 들어감
+                    myData.SetStartRoll(number);
                 }
                 else
                 {
-                    myData.RollDice(number); // 진짜 게임 굴리기: 슬롯에 저장됨
+                    myData.RollDice(number);
                 }
+
+                _diceController.NotifyRollFinished();
             }
         }
     }
@@ -75,5 +97,8 @@ public class DiceCheckZone3D : MonoBehaviour
     public void EnableCheck()
     {
         canCheck = true;
+        hasStartedMoving = false;
+        hasScored = false;
+        stillTimer = 0f;
     }
 }

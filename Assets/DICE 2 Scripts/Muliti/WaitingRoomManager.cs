@@ -35,6 +35,7 @@ public class WaitingRoomManager : MonoBehaviour
 
     private NetworkRunner _runner;
     private bool isCheckingPromotion = false;
+    private bool hasGameStarted = false;
 
     void Start()
     {
@@ -140,6 +141,8 @@ public class WaitingRoomManager : MonoBehaviour
 
     void OnStartGameClicked()
     {
+        startGameButton.interactable = false;
+
         var myPlayerData = FindMyPlayerData();
         if (myPlayerData != null)
         {
@@ -149,13 +152,20 @@ public class WaitingRoomManager : MonoBehaviour
 
     public void OnGameStarted()
     {
+        if (hasGameStarted) return;
+        hasGameStarted = true;
+
         gameObject.SetActive(false);
         gameCanvas.SetActive(true);
 
         if (GameData.IsHost)
         {
-            var runner = FindObjectOfType<NetworkRunner>();
-            runner.Spawn(gameStateManagerPrefab, Vector3.zero, Quaternion.identity);
+            var existing = FindObjectOfType<GameStateManager>();
+            if (existing == null)
+            {
+                var runner = FindObjectOfType<NetworkRunner>();
+                runner.Spawn(gameStateManagerPrefab, Vector3.zero, Quaternion.identity);
+            }
         }
 
         var diceController = FindObjectOfType<DiceController3D>();

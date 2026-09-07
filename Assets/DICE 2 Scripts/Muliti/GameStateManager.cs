@@ -11,9 +11,15 @@ public class GameStateManager : NetworkBehaviour
     public NetworkBool FirstTurnDecided { get; set; }
 
     [Networked] public NetworkBool RerollInProgress { get; set; }
+    [Networked] public TickTimer RerollTimer { get; set; }
+
+    [Networked] public int LastComparedP1Version { get; set; }
+    [Networked] public int LastComparedP2Version { get; set; }
 
     [Networked, OnChangedRender(nameof(OnGameEndedChanged))]
     public NetworkBool GameEnded { get; set; }
+
+    private const float TieRevealSeconds = 3f;
 
     public override void FixedUpdateNetwork()
     {
@@ -39,19 +45,29 @@ public class GameStateManager : NetworkBehaviour
         var p1 = players[0];
         var p2 = players[1];
 
-        if (p1.StartRoll == 0 || p2.StartRoll == 0)
+        if (RerollInProgress)
         {
-            RerollInProgress = false;
+            if (RerollTimer.Expired(Runner))
+            {
+                RerollInProgress = false;
+                RPC_RequestReroll();
+            }
             return;
         }
 
+        bool p1HasFreshRoll = p1.StartRoll != 0 && p1.StartRollVersion > LastComparedP1Version;
+        bool p2HasFreshRoll = p2.StartRoll != 0 && p2.StartRollVersion > LastComparedP2Version;
+
+        if (!p1HasFreshRoll || !p2HasFreshRoll) return;
+
+        LastComparedP1Version = p1.StartRollVersion;
+        LastComparedP2Version = p2.StartRollVersion;
+
         if (p1.StartRoll == p2.StartRoll)
         {
-            if (!RerollInProgress)
-            {
-                RerollInProgress = true;
-                RPC_RequestReroll();
-            }
+            RerollInProgress = true;
+            RerollTimer = TickTimer.CreateFromSeconds(Runner, TieRevealSeconds);
+            Debug.Log($"[선공 결정] 동점! ({p1.StartRoll}) - {TieRevealSeconds}초 후 다시 굴립니다.");
             return;
         }
 
