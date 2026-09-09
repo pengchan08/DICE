@@ -3471,7 +3471,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &924992418
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3667,7 +3667,7 @@ GameObject:
   - component: {fileID: 934100401}
   - component: {fileID: 934100400}
   m_Layer: 5
-  m_Name: big straight
+  m_Name: Big Straight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3827,7 +3827,7 @@ GameObject:
   - component: {fileID: 958106238}
   - component: {fileID: 958106237}
   m_Layer: 5
-  m_Name: little straight
+  m_Name: Small Straight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3886,7 +3886,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 'Little straight : '
+  m_Text: 'Small straight : '
 --- !u!222 &958106238
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4678,7 +4678,7 @@ GameObject:
   - component: {fileID: 1229807720}
   - component: {fileID: 1229807722}
   m_Layer: 5
-  m_Name: little straight
+  m_Name: Small Straight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5237,7 +5237,7 @@ GameObject:
   - component: {fileID: 1324961136}
   - component: {fileID: 1324961135}
   m_Layer: 5
-  m_Name: big straight
+  m_Name: Big Straight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6867,7 +6867,7 @@ GameObject:
   - component: {fileID: 1747627960}
   - component: {fileID: 1747627959}
   m_Layer: 5
-  m_Name: little straight
+  m_Name: Small Straight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7259,7 +7259,7 @@ GameObject:
   - component: {fileID: 1881814748}
   - component: {fileID: 1881814750}
   m_Layer: 5
-  m_Name: big straight
+  m_Name: Big Straight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
