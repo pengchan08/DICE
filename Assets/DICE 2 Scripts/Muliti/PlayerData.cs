@@ -15,6 +15,9 @@ public class PlayerData : NetworkBehaviour
     [Networked] public int TotalScore { get; set; }
     [Networked, Capacity(12)] public NetworkArray<NetworkBool> UsedCombos => default;
 
+    [Networked] public int HeldCardType { get; set; } // -1: 없음, 0~3: 카드 종류
+    [Networked] public NetworkBool HasUsedCardThisTurn { get; set; }
+
     public const int MaxRollsPerTurn = 3;
     private bool hasLoggedOnce = false;
 
