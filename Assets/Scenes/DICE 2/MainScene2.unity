@@ -4822,6 +4822,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Dice
       objectReference: {fileID: 0}
+    - target: {fileID: 4413879562733266359, guid: f423febfc5facfd4daba42b91dea49dc, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f423febfc5facfd4daba42b91dea49dc, type: 3}
 --- !u!1 &627525989 stripped
@@ -8829,6 +8833,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Dice 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1855244070892332063, guid: f0de281d6e003684c8f819c5d09ea835, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f0de281d6e003684c8f819c5d09ea835, type: 3}
 --- !u!4 &1266671134 stripped
@@ -10239,6 +10247,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Dice 4
       objectReference: {fileID: 0}
+    - target: {fileID: 8463458799417724917, guid: 13b91e0446f63ee49a678d9076df459b, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8770011773886509747, guid: 13b91e0446f63ee49a678d9076df459b, type: 3}
       propertyPath: SortKey
       value: 1273070733
@@ -10427,6 +10439,10 @@ PrefabInstance:
     - target: {fileID: 6806495442254844330, guid: 4d94fe686791f8f4c815280d7d85d57f, type: 3}
       propertyPath: m_Name
       value: Dice 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6806495442254844330, guid: 4d94fe686791f8f4c815280d7d85d57f, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4d94fe686791f8f4c815280d7d85d57f, type: 3}
@@ -12060,6 +12076,10 @@ PrefabInstance:
     - target: {fileID: 3704230969152017828, guid: c7e244358822621469cefdbfe8394577, type: 3}
       propertyPath: m_Name
       value: Dice 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3704230969152017828, guid: c7e244358822621469cefdbfe8394577, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4045291141816307486, guid: c7e244358822621469cefdbfe8394577, type: 3}
       propertyPath: m_RootOrder
@@ -13839,6 +13859,10 @@ PrefabInstance:
     - target: {fileID: 8121236199815965317, guid: 7b95350977fbb0447b1abdaee72f2079, type: 3}
       propertyPath: m_Name
       value: Dice 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8121236199815965317, guid: 7b95350977fbb0447b1abdaee72f2079, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8935068986394193983, guid: 7b95350977fbb0447b1abdaee72f2079, type: 3}
       propertyPath: m_RootOrder

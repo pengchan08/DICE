@@ -155,6 +155,7 @@ public class WaitingRoomManager : MonoBehaviour
 
     public void OnGameStarted()
     {
+        Debug.Log($"[진단] OnGameStarted 호출됨. IsHost={GameData.IsHost}");
         if (hasGameStarted) return;
         hasGameStarted = true;
 
@@ -163,7 +164,9 @@ public class WaitingRoomManager : MonoBehaviour
 
         if (GameData.IsHost)
         {
+            Debug.Log("[진단] 호스트 분기 진입 - 주사위 스폰 시도");
             var runner = FindObjectOfType<NetworkRunner>();
+            Debug.Log($"[진단] runner={(runner == null ? "null" : "정상")}");
 
             var existing = FindObjectOfType<GameStateManager>();
             if (existing == null)
@@ -171,9 +174,20 @@ public class WaitingRoomManager : MonoBehaviour
                 runner.Spawn(gameStateManagerPrefab, Vector3.zero, Quaternion.identity);
             }
 
-            var diceObj = runner.Spawn(firstTurnDicePrefab, new Vector3(0, 2, 0), Quaternion.identity);
+            var diceObj = runner.Spawn(
+                firstTurnDicePrefab,
+                new Vector3(0, 2, 0),
+                Quaternion.identity,
+                onBeforeSpawned: (runner, obj) =>
+                {
+                    var dc = obj.GetComponent<DiceController3D>();
+                    dc.diceIndex = -1;
+                }
+            );
+            Debug.Log($"[진단] diceObj={(diceObj == null ? "null" : "생성됨")}");
+
             var diceController = diceObj.GetComponent<DiceController3D>();
-            diceController.diceIndex = -1;
+            Debug.Log($"[진단] diceController={(diceController == null ? "null" : "정상")}");
 
             if (DiceGroupController3D.Instance != null)
             {

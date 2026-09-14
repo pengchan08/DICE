@@ -6,7 +6,7 @@ using Fusion;
 
 public class DiceController3D : NetworkBehaviour
 {
-    public int diceIndex = -1; // -1: 선공 결정용, 0~4: 게임플레이용
+    [Networked] public int diceIndex { get; set; } = -1; // -1: 선공 결정용, 0~4: 게임플레이용
 
     private Rigidbody rb;
     public Vector3 diceVelocity;
@@ -45,8 +45,16 @@ public class DiceController3D : NetworkBehaviour
 
     public override void Spawned()
     {
+        Debug.Log($"[진단] Spawned 호출됨. diceIndex={diceIndex}, HasStateAuthority={Object.HasStateAuthority}");
+
+        if (diceIndex == -1 && DiceGroupController3D.Instance != null)
+        {
+            DiceGroupController3D.Instance.RegisterFirstTurnDice(this);
+        }
+
         if (diceIndex == -1 && Object.HasStateAuthority)
         {
+            Debug.Log("[진단] 조건 통과 - RollForFirstTurn 호출");
             RollForFirstTurn();
         }
     }
@@ -142,10 +150,24 @@ public class DiceController3D : NetworkBehaviour
 
     public void RollForFirstTurn()
     {
-        if (IsRolling) return;
+        Debug.Log("[진단] RollForFirstTurn 진입");
+        if (IsRolling)
+        {
+            Debug.Log("[진단] 취소: IsRolling=true");
+            return;
+        }
         var myData = FindMyPlayerData();
-        if (myData == null) return;
-        if (!myData.CanRollForFirstTurn()) return;
+        if (myData == null)
+        {
+            Debug.Log("[진단] 취소: myData=null");
+            return;
+        }
+        if (!myData.CanRollForFirstTurn())
+        {
+            Debug.Log($"[진단] 취소: CanRollForFirstTurn=false (StartRoll={myData.StartRoll})");
+            return;
+        }
+        Debug.Log("[진단] 통과 - DoPhysicalRoll 호출");
         DoPhysicalRoll();
     }
 
@@ -158,12 +180,14 @@ public class DiceController3D : NetworkBehaviour
 
     public void RequestAndRoll()
     {
+        Debug.Log($"[진단] RequestAndRoll 호출됨. 현재 HasStateAuthority={Object.HasStateAuthority}");
         if (Object.HasStateAuthority)
         {
             RollForFirstTurn();
         }
         else
         {
+            Debug.Log("[진단] 권한 요청 시작");
             Object.RequestStateAuthority();
             StartCoroutine(WaitForAuthorityThenRoll());
         }
@@ -177,9 +201,16 @@ public class DiceController3D : NetworkBehaviour
             timeout -= Time.deltaTime;
             yield return null;
         }
+
+        Debug.Log($"[진단] 대기 종료. HasStateAuthority={Object.HasStateAuthority}, 남은시간={timeout:F2}");
+
         if (Object.HasStateAuthority)
         {
             RollForFirstTurn();
+        }
+        else
+        {
+            Debug.Log("[진단] 권한 획득 실패 - 타임아웃");
         }
     }
 
@@ -204,8 +235,18 @@ public class DiceController3D : NetworkBehaviour
 
     void DoPhysicalRoll()
     {
-        if (rb == null) return;
-        if (!Object.HasStateAuthority) return;
+        if (rb == null)
+        {
+            Debug.Log("[진단] DoPhysicalRoll 취소: rb=null");
+            return;
+        }
+        if (!Object.HasStateAuthority)
+        {
+            Debug.Log("[진단] DoPhysicalRoll 취소: HasStateAuthority=false");
+            return;
+        }
+
+        Debug.Log("[진단] DoPhysicalRoll 실행 - 힘 가함");
 
         IsRolling = true;
         hasStartedMoving = false;

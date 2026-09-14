@@ -23,7 +23,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &9097251745263965519
 Transform:
   m_ObjectHideFlags: 0
@@ -233,17 +233,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae27bb50ab4b2e246b7ef0c62277ffae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  diceIndex: 4
+  _diceIndex: -1
   diceVelocity: {x: 0, y: 0, z: 0}
   diceAngularVelocity: {x: 0, y: 0, z: 0}
   diceRollClip: {fileID: 8300000, guid: 8e7741263b9275c4683b9dc03c9a7307, type: 3}
   useOppositeFace: 0
   dicePrefabs:
-  - RawGuidValue: 00000000000000000000000000000000
-  - RawGuidValue: 00000000000000000000000000000000
-  - RawGuidValue: 00000000000000000000000000000000
-  - RawGuidValue: 00000000000000000000000000000000
-  - RawGuidValue: 00000000000000000000000000000000
+  - RawGuidValue: f0de281d6e003684c8f819c5d09ea835
+  - RawGuidValue: 4d94fe686791f8f4c815280d7d85d57f
+  - RawGuidValue: 7b95350977fbb0447b1abdaee72f2079
+  - RawGuidValue: c7e244358822621469cefdbfe8394577
+  - RawGuidValue: 13b91e0446f63ee49a678d9076df459b
 --- !u!114 &8770011773886509747
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -258,7 +258,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SortKey: 3388150845
   ObjectInterest: 1
-  Flags: 262145
+  Flags: 786433
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 8770011773886509736}
