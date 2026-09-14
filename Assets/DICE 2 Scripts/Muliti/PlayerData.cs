@@ -26,10 +26,10 @@ public class PlayerData : NetworkBehaviour
             IsHost = GameData.IsHost;
             IsReady = false;
 
-            // 추가: 게임 데이터 초기화
             for (int i = 0; i < 5; i++)
             {
                 DiceSlots.Set(i, 0);
+                HeldDice.Set(i, false);
             }
             RollCount = 0;
             TotalScore = 0;
@@ -40,44 +40,30 @@ public class PlayerData : NetworkBehaviour
     {
         if (!hasLoggedOnce && !string.IsNullOrEmpty(PlayerName.ToString()))
         {
-            Debug.Log($"[PlayerData] 이름: {PlayerName}, 방장: {IsHost}, StateAuthority 여부: {Object.HasStateAuthority}");
             hasLoggedOnce = true;
         }
     }
 
     public void ToggleReady()
     {
-        if (Object.HasStateAuthority)
-        {
-            IsReady = !IsReady;
-        }
+        if (Object.HasStateAuthority) IsReady = !IsReady;
     }
 
     [Rpc(RpcSources.All, RpcTargets.All)]
     public void RPC_StartGame()
     {
-        Debug.Log("모든 클라이언트에서 게임 시작 신호 받음!");
         var waitingRoomManager = FindObjectOfType<WaitingRoomManager>();
-        if (waitingRoomManager != null)
-        {
-            waitingRoomManager.OnGameStarted();
-        }
+        if (waitingRoomManager != null) waitingRoomManager.OnGameStarted();
     }
 
     public void PromoteToHost()
     {
-        if (Object.HasStateAuthority)
-        {
-            IsHost = true;
-        }
+        if (Object.HasStateAuthority) IsHost = true;
     }
 
     public bool CanRollForFirstTurn()
     {
-        if (!Object.HasStateAuthority)
-        {
-            return false;
-        }
+        if (!Object.HasStateAuthority) return false;
         return StartRoll == 0;
     }
 
@@ -89,75 +75,58 @@ public class PlayerData : NetworkBehaviour
         StartRollVersion++;
     }
 
-    void TriggerPhysicalReroll()
+    public void ResetStartRollOnly()
     {
-        var diceController = FindObjectOfType<DiceController3D>();
-        if (diceController != null)
-        {
-            diceController.RollForFirstTurn();
-        }
-    }
-
-    public void ResetAndReroll()
-    {
-        if (Object.HasStateAuthority)
-        {
-            StartRoll = 0;
-            Invoke(nameof(TriggerPhysicalReroll), 0.5f);
-        }
+        if (!Object.HasStateAuthority) return;
+        StartRoll = 0;
     }
 
     public bool CanRollNow()
     {
         if (!Object.HasStateAuthority) return false;
-
         var gameState = FindObjectOfType<GameStateManager>();
         if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return false;
-
-        if (RollCount >= 8) return false;
-        if (AreAllSlotsFilled()) return false;
-
+        if (RollCount >= MaxRollsPerTurn) return false;
         return true;
     }
 
-    public void RollDice(int result)
+    public bool CanRollThisTurn()
     {
-        if (!CanRollNow()) return; // 안전장치: 여기서도 한 번 더 확인
+        if (!Object.HasStateAuthority) return false;
+        var gameState = FindObjectOfType<GameStateManager>();
+        if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return false;
+        return RollCount < MaxRollsPerTurn;
+    }
 
-        SaveToSlot(result);
+    public void IncrementRollCount()
+    {
+        if (!Object.HasStateAuthority) return;
         RollCount++;
-
-        Debug.Log($"[주사위 굴림] {PlayerName}: {result} (남은 횟수: {8 - RollCount})");
     }
 
-    bool AreAllSlotsFilled()
+    public void SetDiceResult(int diceIndex, int result)
     {
-        for (int i = 0; i < 5; i++)
-        {
-            if (DiceSlots[i] == 0) return false;
-        }
-        return true;
+        if (!Object.HasStateAuthority) return;
+        if (diceIndex < 0 || diceIndex >= 5) return;
+        DiceSlots.Set(diceIndex, result);
     }
 
-    void SaveToSlot(int number)
+    public void ToggleHold(int index)
     {
-        for (int i = 0; i < 5; i++)
-        {
-            if (DiceSlots[i] == 0)
-            {
-                DiceSlots.Set(i, number);
-                break;
-            }
-        }
+        if (!Object.HasStateAuthority) return;
+        var gameState = FindObjectOfType<GameStateManager>();
+        if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return;
+        if (index < 0 || index >= 5) return;
+        if (DiceSlots[index] == 0) return;
+        if (RollCount == 0) return;
+        HeldDice.Set(index, !HeldDice[index]);
     }
 
     public void ResetSlot(int index)
     {
         if (!Object.HasStateAuthority) return;
-
         var gameState = FindObjectOfType<GameStateManager>();
         if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return;
-
         if (index < 0 || index >= 5) return;
         DiceSlots.Set(index, 0);
     }
@@ -320,43 +289,52 @@ public class PlayerData : NetworkBehaviour
         return true;
     }
 
-    public void ToggleHold(int index)
-    {
-        if (!Object.HasStateAuthority) return;
+    // void TriggerPhysicalReroll()
+    // {
+    //     var diceController = FindObjectOfType<DiceController3D>();
+    //     if (diceController != null)
+    //     {
+    //         diceController.RollForFirstTurn();
+    //     }
+    // }
 
-        var gameState = FindObjectOfType<GameStateManager>();
-        if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return;
+    // public void ResetAndReroll()
+    // {
+    //     if (Object.HasStateAuthority)
+    //     {
+    //         StartRoll = 0;
+    //         Invoke(nameof(TriggerPhysicalReroll), 0.5f);
+    //     }
+    // }
 
-        if (index < 0 || index >= 5) return;
-        if (DiceSlots[index] == 0) return;
-        if (RollCount == 0) return;
+    // public void RollDice(int result)
+    // {
+    //     if (!CanRollNow()) return; // 안전장치: 여기서도 한 번 더 확인
 
-        HeldDice.Set(index, !HeldDice[index]);
-    }
+    //     SaveToSlot(result);
+    //     RollCount++;
 
-    public void SetDiceResult(int diceIndex, int result)
-    {
-        if (!Object.HasStateAuthority) return;
-        if (diceIndex < 0 || diceIndex >= 5) return;
+    //     Debug.Log($"[주사위 굴림] {PlayerName}: {result} (남은 횟수: {8 - RollCount})");
+    // }
 
-        DiceSlots.Set(diceIndex, result);
-        Debug.Log($"[게임 주사위] {PlayerName}: 슬롯 {diceIndex} = {result}");
-    }
+    // bool AreAllSlotsFilled()
+    // {
+    //     for (int i = 0; i < 5; i++)
+    //     {
+    //         if (DiceSlots[i] == 0) return false;
+    //     }
+    //     return true;
+    // }
 
-    public void IncrementRollCount()
-    {
-        if (!Object.HasStateAuthority) return;
-        RollCount++;
-        Debug.Log($"[턴 굴리기] {PlayerName}: {RollCount}/{MaxRollsPerTurn}회");
-    }
-
-    public bool CanRollThisTurn()
-    {
-        if (!Object.HasStateAuthority) return false;
-
-        var gameState = FindObjectOfType<GameStateManager>();
-        if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return false;
-
-        return RollCount < MaxRollsPerTurn;
-    }
+    // void SaveToSlot(int number)
+    // {
+    //     for (int i = 0; i < 5; i++)
+    //     {
+    //         if (DiceSlots[i] == 0)
+    //         {
+    //             DiceSlots.Set(i, number);
+    //             break;
+    //         }
+    //     }
+    // }
 }

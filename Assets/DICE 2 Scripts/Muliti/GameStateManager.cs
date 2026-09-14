@@ -11,15 +11,16 @@ public class GameStateManager : NetworkBehaviour
     public NetworkBool FirstTurnDecided { get; set; }
 
     [Networked] public NetworkBool RerollInProgress { get; set; }
-    [Networked] public TickTimer RerollTimer { get; set; }
+    [Networked] public TickTimer RerollDelayTimer { get; set; }
+    [Networked] public NetworkBool WaitingForGuestRoll { get; set; }
 
-    [Networked] public int LastComparedP1Version { get; set; }
-    [Networked] public int LastComparedP2Version { get; set; }
+    [Networked] public int LastComparedHostVersion { get; set; }
+    [Networked] public int LastComparedGuestVersion { get; set; }
 
     [Networked, OnChangedRender(nameof(OnGameEndedChanged))]
     public NetworkBool GameEnded { get; set; }
 
-    private const float TieRevealSeconds = 3f;
+    private const float TieRevealSeconds = 1.5f;
 
     public override void FixedUpdateNetwork()
     {
@@ -39,43 +40,58 @@ public class GameStateManager : NetworkBehaviour
 
     void HandleFirstTurnDecision()
     {
-        var players = FindObjectsOfType<PlayerData>();
-        if (players.Length < 2) return;
+        var players = FindObjectsOfType<PlayerData>()
+             .Where(p => p != null && p.Object != null && p.Object.IsValid)
+             .ToList();
+        if (players.Count < 2) return;
 
-        var p1 = players[0];
-        var p2 = players[1];
+        var host = players.FirstOrDefault(p => p.IsHost);
+        var guest = players.FirstOrDefault(p => !p.IsHost);
+        if (host == null || guest == null) return;
 
         if (RerollInProgress)
         {
-            if (RerollTimer.Expired(Runner))
+            if (RerollDelayTimer.Expired(Runner))
             {
                 RerollInProgress = false;
-                RPC_RequestReroll();
+                WaitingForGuestRoll = false;
+                RPC_ResetAndRollHostFirst();
             }
             return;
         }
 
-        bool p1HasFreshRoll = p1.StartRoll != 0 && p1.StartRollVersion > LastComparedP1Version;
-        bool p2HasFreshRoll = p2.StartRoll != 0 && p2.StartRollVersion > LastComparedP2Version;
+        bool hostHasFreshRoll = host.StartRoll != 0 && host.StartRollVersion > LastComparedHostVersion;
+        bool guestHasFreshRoll = guest.StartRoll != 0 && guest.StartRollVersion > LastComparedGuestVersion;
 
-        if (!p1HasFreshRoll || !p2HasFreshRoll) return;
-
-        LastComparedP1Version = p1.StartRollVersion;
-        LastComparedP2Version = p2.StartRollVersion;
-
-        if (p1.StartRoll == p2.StartRoll)
+        if (!hostHasFreshRoll)
         {
-            RerollInProgress = true;
-            RerollTimer = TickTimer.CreateFromSeconds(Runner, TieRevealSeconds);
-            Debug.Log($"[선공 결정] 동점! ({p1.StartRoll}) - {TieRevealSeconds}초 후 다시 굴립니다.");
             return;
         }
 
-        var winner = p1.StartRoll > p2.StartRoll ? p1 : p2;
+        if (!guestHasFreshRoll)
+        {
+            if (!WaitingForGuestRoll)
+            {
+                WaitingForGuestRoll = true;
+                RPC_TriggerRoll(guest.Object.InputAuthority);
+            }
+            return;
+        }
+
+        LastComparedHostVersion = host.StartRollVersion;
+        LastComparedGuestVersion = guest.StartRollVersion;
+        WaitingForGuestRoll = false;
+
+        if (host.StartRoll == guest.StartRoll)
+        {
+            RerollInProgress = true;
+            RerollDelayTimer = TickTimer.CreateFromSeconds(Runner, TieRevealSeconds);
+            return;
+        }
+
+        var winner = host.StartRoll > guest.StartRoll ? host : guest;
         CurrentTurnPlayer = winner.Object.InputAuthority;
         FirstTurnDecided = true;
-
-        Debug.Log($"[선공 결정] {winner.PlayerName} 이(가) 선공입니다. ({p1.PlayerName} 롤: {p1.StartRoll}, {p2.PlayerName} 롤: {p2.StartRoll})");
     }
 
     void CheckGameEnd()
@@ -86,38 +102,20 @@ public class GameStateManager : NetworkBehaviour
         if (players[0].AreAllCombosUsed() && players[1].AreAllCombosUsed())
         {
             GameEnded = true;
-            Debug.Log("[게임 종료] 두 플레이어 모두 모든 조합을 사용했습니다.");
         }
     }
 
     void OnGameEndedChanged()
     {
         if (!GameEnded) return;
-
-        var resultUI = FindObjectOfType<ResultUIManager>(true); // true 추가: 비활성화된 것도 찾기
-        if (resultUI != null)
-        {
-            resultUI.ShowResult();
-        }
-        else
-        {
-            Debug.LogWarning("[디버그] ResultUIManager를 찾지 못했습니다.");
-        }
+        var resultUI = FindObjectOfType<ResultUIManager>(true);
+        if (resultUI != null) resultUI.ShowResult();
     }
 
     void OnFirstTurnDecidedChanged()
     {
         if (!FirstTurnDecided) return;
 
-        var winnerData = FindObjectsOfType<PlayerData>()
-            .FirstOrDefault(p => p.Object.InputAuthority == CurrentTurnPlayer);
-
-        if (winnerData != null)
-        {
-            Debug.Log($"[선공 결정] {winnerData.PlayerName} 이(가) 선공입니다!");
-        }
-
-        // 변경: 배열을 직접 안 들고, 씬에 있는 매니저를 찾아서 호출
         if (DiceGroupController3D.Instance != null)
         {
             DiceGroupController3D.Instance.ActivateGameplayDice();
@@ -126,30 +124,33 @@ public class GameStateManager : NetworkBehaviour
 
     void OnCurrentTurnChanged()
     {
-        var currentPlayerData = FindObjectsOfType<PlayerData>()
-            .FirstOrDefault(p => p.Object.InputAuthority == CurrentTurnPlayer);
-
-        if (currentPlayerData != null)
-        {
-            Debug.Log($"[턴 전환] 이제 {currentPlayerData.PlayerName} 의 턴입니다.");
-        }
-
         var uiManager = FindObjectOfType<GameUIManager>();
-        if (uiManager != null)
-        {
-            uiManager.RefreshTurnUI();
-        }
+        if (uiManager != null) uiManager.RefreshTurnUI();
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    void RPC_RequestReroll()
+    void RPC_TriggerRoll(PlayerRef target)
+    {
+        if (Runner.LocalPlayer != target) return;
+        var dice = DiceGroupController3D.Instance != null ? DiceGroupController3D.Instance.FirstTurnDice : null;
+        if (dice != null) dice.RequestAndRoll();
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    void RPC_ResetAndRollHostFirst()
     {
         var myData = FindObjectsOfType<PlayerData>()
             .Where(p => p != null && p.Object != null && p.Object.IsValid)
             .FirstOrDefault(p => p.Object.HasStateAuthority);
-        if (myData != null)
+
+        if (myData == null) return;
+
+        myData.ResetStartRollOnly();
+
+        if (myData.IsHost)
         {
-            myData.ResetAndReroll();
+            var dice = DiceGroupController3D.Instance != null ? DiceGroupController3D.Instance.FirstTurnDice : null;
+            if (dice != null) dice.RequestAndRoll();
         }
     }
 

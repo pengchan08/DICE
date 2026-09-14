@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Linq;
+using Fusion;
 
 public class DiceGroupController3D : MonoBehaviour
 {
@@ -14,6 +15,8 @@ public class DiceGroupController3D : MonoBehaviour
     public GameObject firstTurnDiceObject;
 
     private int pendingCount = 0;
+    private DiceController3D firstTurnDiceController;
+    public DiceController3D FirstTurnDice => firstTurnDiceController;
 
     void Awake()
     {
@@ -50,14 +53,20 @@ public class DiceGroupController3D : MonoBehaviour
             if (!isHeld)
             {
                 pendingCount++;
-                diceControllers[i].diceIndex = i;
-                diceControllers[i].RollGameplay(); // DiceController3D의 함수를 "호출"하는 건 맞음
+                var dc = diceControllers[i];
+                dc.diceIndex = i;
+
+                if (!dc.Object.HasStateAuthority)
+                {
+                    dc.Object.RequestStateAuthority();
+                }
+
+                dc.RollGameplay();
                 rolledAny = true;
             }
         }
 
         if (!rolledAny) return;
-
         myData.IncrementRollCount();
     }
 
@@ -80,6 +89,11 @@ public class DiceGroupController3D : MonoBehaviour
         myData.SetDiceResult(diceIndex, fallbackValue);
 
         pendingCount--;
+    }
+
+    public void RegisterFirstTurnDice(DiceController3D controller)
+    {
+        firstTurnDiceController = controller;
     }
 
     PlayerData FindMyPlayerData()

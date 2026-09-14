@@ -33,6 +33,9 @@ public class WaitingRoomManager : MonoBehaviour
     [Header("게임 화면")]
     public GameObject gameCanvas;
 
+    [Header("주사위 프리팹")]
+    public NetworkPrefabRef firstTurnDicePrefab;
+
     private NetworkRunner _runner;
     private bool isCheckingPromotion = false;
     private bool hasGameStarted = false;
@@ -160,18 +163,22 @@ public class WaitingRoomManager : MonoBehaviour
 
         if (GameData.IsHost)
         {
+            var runner = FindObjectOfType<NetworkRunner>();
+
             var existing = FindObjectOfType<GameStateManager>();
             if (existing == null)
             {
-                var runner = FindObjectOfType<NetworkRunner>();
                 runner.Spawn(gameStateManagerPrefab, Vector3.zero, Quaternion.identity);
             }
-        }
 
-        var diceController = FindObjectOfType<DiceController3D>();
-        if (diceController != null)
-        {
-            diceController.RollForFirstTurn();
+            var diceObj = runner.Spawn(firstTurnDicePrefab, new Vector3(0, 2, 0), Quaternion.identity);
+            var diceController = diceObj.GetComponent<DiceController3D>();
+            diceController.diceIndex = -1;
+
+            if (DiceGroupController3D.Instance != null)
+            {
+                DiceGroupController3D.Instance.RegisterFirstTurnDice(diceController);
+            }
         }
     }
 
