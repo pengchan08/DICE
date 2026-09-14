@@ -14,11 +14,13 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
     public InputField createRoomNameInput;
     public Text generatedRoomCodeText;
     public Button createButton;
+    public Button createExitButton;
 
     [Header("방 참가 화면")]
     public InputField joinPlayerNameInput;
     public InputField joinRoomCodeInput;
     public Button joinButton;
+    public Button joinExitButton;
 
     [Header("플레이어 데이터")]
     public NetworkPrefabRef playerDataPrefab;
@@ -40,7 +42,7 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
 
     async void OnCreateRoom()
     {
-        createButton.interactable = false;
+        SetAllInteractable(false);
 
         string roomCode = GenerateRoomCode();
         generatedRoomCodeText.text = "방 코드: " + roomCode;
@@ -62,13 +64,22 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
             return;
         }
 
-        joinButton.interactable = false;
+        SetAllInteractable(false);
 
         GameData.PlayerName = joinPlayerNameInput.text;
         GameData.RoomCode = roomCode;
         GameData.IsHost = false;
 
         await ConnectToRoom(roomCode);
+    }
+
+    void SetAllInteractable(bool value)
+    {
+        createButton.interactable = value;
+        joinButton.interactable = value;
+
+        if (createExitButton != null) createExitButton.interactable = value;
+        if (joinExitButton != null) joinExitButton.interactable = value;
     }
 
     string GenerateRoomCode()
@@ -153,8 +164,7 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
 
     public void ResetMenuButtons()
     {
-        createButton.interactable = true;
-        joinButton.interactable = true;
+        SetAllInteractable(true);
     }
 
     void ShowErrorMessage(string message)

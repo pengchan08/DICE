@@ -14,31 +14,79 @@ public class DiceGroupController3D : MonoBehaviour
     [Header("선공 결정용 주사위")]
     public GameObject firstTurnDiceObject;
 
+    [Header("게임플레이 주사위 프리팹")]
+    public NetworkPrefabRef gameplayDicePrefab;
+
     private int pendingCount = 0;
     private DiceController3D firstTurnDiceController;
     public DiceController3D FirstTurnDice => firstTurnDiceController;
+    public bool IsAnyDiceRolling => pendingCount > 0;
 
     void Awake()
     {
         Instance = this;
     }
 
+    public void SpawnGameplayDice()
+    {
+        if (!GameData.IsHost) return;
+
+        var runner = FindObjectOfType<NetworkRunner>();
+        Vector3[] positions = new Vector3[]
+        {
+        new Vector3(-3, 1.5f, -2.5f),
+        new Vector3(-1.5f, 1.5f, -2.5f),
+        new Vector3(0, 1.5f, -2.5f),
+        new Vector3(1.5f, 1.5f, -2.5f),
+        new Vector3(3, 1.5f, -2.5f),
+        };
+
+        for (int i = 0; i < 5; i++)
+        {
+            int index = i; // 클로저 캡처 주의
+            runner.Spawn(
+                gameplayDicePrefab,
+                positions[i],
+                Quaternion.identity,
+                onBeforeSpawned: (r, obj) =>
+                {
+                    var dc = obj.GetComponent<DiceController3D>();
+                    dc.diceIndex = index;
+                }
+            );
+        }
+    }
+
+    public void RegisterGameplayDice(int index, DiceController3D controller)
+    {
+        if (diceControllers == null || diceControllers.Length != 5)
+            diceControllers = new DiceController3D[5];
+
+        diceControllers[index] = controller;
+    }
+
     public void ActivateGameplayDice()
     {
-        foreach (var dice in gameplayDiceObjects)
-        {
-            if (dice != null) dice.SetActive(true);
-        }
+        SpawnGameplayDice();
 
-        if (firstTurnDiceObject != null)
+        if (firstTurnDiceController != null && firstTurnDiceController.Object != null)
         {
-            firstTurnDiceObject.SetActive(false);
+            if (firstTurnDiceController.Object.HasStateAuthority)
+            {
+                var runner = FindObjectOfType<NetworkRunner>();
+                runner.Despawn(firstTurnDiceController.Object);
+            }
+            firstTurnDiceController = null;
         }
     }
 
     public void RollNonHeldDice()
     {
-        if (pendingCount > 0) return;
+        if (pendingCount > 0)
+        {
+            Debug.LogWarning($"[진단] 재굴림 무시됨. 현재 pendingCount={pendingCount}");
+            return;
+        }
 
         var myData = FindMyPlayerData();
         if (myData == null) return;
@@ -47,24 +95,22 @@ public class DiceGroupController3D : MonoBehaviour
         pendingCount = 0;
         bool rolledAny = false;
 
+        Debug.Log("[진단] === 새 굴림 시작 ===");
+
         for (int i = 0; i < 5; i++)
         {
             bool isHeld = myData.HeldDice[i];
+            Debug.Log($"[진단] 슬롯 {i}: Held={isHeld}");
             if (!isHeld)
             {
                 pendingCount++;
                 var dc = diceControllers[i];
-                dc.diceIndex = i;
-
-                if (!dc.Object.HasStateAuthority)
-                {
-                    dc.Object.RequestStateAuthority();
-                }
-
-                dc.RollGameplay();
+                dc.RequestAndRollGameplay();
                 rolledAny = true;
             }
         }
+
+        Debug.Log($"[진단] 이번 굴림 대상 개수(pendingCount)={pendingCount}");
 
         if (!rolledAny) return;
         myData.IncrementRollCount();
@@ -75,9 +121,12 @@ public class DiceGroupController3D : MonoBehaviour
         var myData = FindMyPlayerData();
         if (myData == null) return;
 
-        myData.SetDiceResult(diceIndex, number);
+        Debug.Log($"[진단] OnDieLanded 호출: diceIndex={diceIndex}, number={number}, 호출 전 pendingCount={pendingCount}");
 
+        myData.SetDiceResult(diceIndex, number);
         pendingCount--;
+
+        Debug.Log($"[진단] 호출 후 pendingCount={pendingCount}");
     }
 
     public void ForceResolveDie(int diceIndex)

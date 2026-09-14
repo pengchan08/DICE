@@ -24,8 +24,9 @@ public class ComboUIManager : MonoBehaviour
                         && gameState.FirstTurnDecided
                         && gameState.CurrentTurnPlayer == myData.Object.InputAuthority;
 
-        // 추가: 이번 턴에 한 번도 안 굴렸으면 조합 선택도 막음 (굴리기 전에 확정하는 건 말이 안 되니까)
-        bool canSelectCombo = isMyTurn && myData.RollCount > 0;
+        bool isDiceRolling = DiceGroupController3D.Instance != null && DiceGroupController3D.Instance.IsAnyDiceRolling;
+
+        bool canSelectCombo = isMyTurn && !isDiceRolling && myData.RollCount > 0;
 
         foreach (var button in comboButtons)
         {

@@ -37,6 +37,8 @@ public class GameplayDiceUIManager : MonoBehaviour
         bool isMyTurn = gameState != null && gameState.FirstTurnDecided
                         && gameState.CurrentTurnPlayer == myData.Object.InputAuthority;
 
+        bool isDiceRolling = DiceGroupController3D.Instance != null && DiceGroupController3D.Instance.IsAnyDiceRolling;
+
         for (int i = 0; i < 5; i++)
         {
             int value = myData.DiceSlots[i];
@@ -45,13 +47,11 @@ public class GameplayDiceUIManager : MonoBehaviour
             diceValueTexts[i].text = value == 0 ? "-" : value.ToString();
             slotBackgrounds[i].color = isHeld ? heldColor : normalColor;
 
-            // 슬롯 클릭(Hold) 가능 조건: 내 턴 + 값이 있음(한 번 이상 굴림) + 아직 3회 안 씀
-            bool canToggle = isMyTurn && value != 0 && myData.RollCount < PlayerData.MaxRollsPerTurn;
+            bool canToggle = isMyTurn && !isDiceRolling && value != 0 && myData.RollCount < PlayerData.MaxRollsPerTurn;
             diceSlotButtons[i].interactable = canToggle;
         }
 
-        // 굴리기 버튼: 내 턴 + 아직 3회 안 씀
-        bool canRoll = isMyTurn && myData.RollCount < PlayerData.MaxRollsPerTurn;
+        bool canRoll = isMyTurn && !isDiceRolling && myData.RollCount < PlayerData.MaxRollsPerTurn;
         rollButton.interactable = canRoll;
 
         rollCountText.text = $"남은 굴리기 : {PlayerData.MaxRollsPerTurn - myData.RollCount}회";

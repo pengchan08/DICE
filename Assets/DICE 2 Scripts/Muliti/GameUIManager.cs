@@ -7,7 +7,6 @@ public class GameUIManager : MonoBehaviour
 {
     [Header("주사위 슬롯")]
     public Text[] diceSlotTexts; // 5개를 인스펙터에서 순서대로 연결
-    public Text rollCountText;
     public Button rollDiceButton;
 
     public Text currentTurnText;
@@ -72,7 +71,6 @@ public class GameUIManager : MonoBehaviour
         {
             diceSlotTexts[i].text = myData.DiceSlots[i].ToString();
         }
-        rollCountText.text = $"남은 횟수: {8 - myData.RollCount} / 8";
 
         foreach (var combo in comboButtons)
         {

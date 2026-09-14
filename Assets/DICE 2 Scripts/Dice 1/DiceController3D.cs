@@ -26,8 +26,8 @@ public class DiceController3D : NetworkBehaviour
     public NetworkPrefabRef[] dicePrefabs = new NetworkPrefabRef[5];
     private DiceController3D[] spawnedDice = new DiceController3D[5];
 
-    private const float velocityThreshold = 0.15f;
-    private const float requiredStillTime = 0.2f;
+    private const float velocityThreshold = 0.02f;
+    private const float requiredStillTime = 0.6f;
     private float stillTimer = 0f;
     private bool hasStartedMoving = false;
     private bool hasResolvedThisRoll = false;
@@ -35,26 +35,33 @@ public class DiceController3D : NetworkBehaviour
     private Vector3 initialSpawnPos;
     private Dictionary<int, Vector3> faceLocalDirections = new Dictionary<int, Vector3>();
 
+    private float rollStartTime = 0f;
+    private const float minRollDuration = 0.5f;
+
+    private int rollVersion = 0;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
         audioSource = GetComponent<AudioSource>();
-        initialSpawnPos = transform.position;
         BuildFaceDirections();
     }
 
     public override void Spawned()
     {
-        Debug.Log($"[진단] Spawned 호출됨. diceIndex={diceIndex}, HasStateAuthority={Object.HasStateAuthority}");
+        initialSpawnPos = transform.position;
 
         if (diceIndex == -1 && DiceGroupController3D.Instance != null)
         {
             DiceGroupController3D.Instance.RegisterFirstTurnDice(this);
         }
+        else if (diceIndex >= 0 && diceIndex < 5 && DiceGroupController3D.Instance != null)
+        {
+            DiceGroupController3D.Instance.RegisterGameplayDice(diceIndex, this); // 추가
+        }
 
         if (diceIndex == -1 && Object.HasStateAuthority)
         {
-            Debug.Log("[진단] 조건 통과 - RollForFirstTurn 호출");
             RollForFirstTurn();
         }
     }
@@ -89,12 +96,44 @@ public class DiceController3D : NetworkBehaviour
         }
     }
 
+    void DoPhysicalRoll()
+    {
+        if (rb == null) return;
+        if (!Object.HasStateAuthority) return;
+
+        rollVersion++;
+        IsRolling = true;
+        hasStartedMoving = false;
+        hasResolvedThisRoll = false;
+        stillTimer = 0f;
+        rollStartTime = Time.time;
+
+        if (audioSource != null && diceRollClip != null)
+            audioSource.PlayOneShot(diceRollClip);
+
+        float dirX = Random.Range(200, 500);
+        float dirY = Random.Range(200, 500);
+        float dirZ = Random.Range(200, 500);
+
+        if (Random.value > 0.5f) dirX = -dirX;
+        if (Random.value > 0.5f) dirY = -dirY;
+        if (Random.value > 0.5f) dirZ = -dirZ;
+
+        transform.position = initialSpawnPos;
+        transform.rotation = Random.rotation;
+        rb.velocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+        rb.AddForce(Vector3.up * 400);
+        rb.AddTorque(dirX, dirY, dirZ);
+    }
+
     void Update()
     {
         diceVelocity = rb.velocity;
         diceAngularVelocity = rb.angularVelocity;
 
         if (!IsRolling) return;
+        if (Time.time - rollStartTime < minRollDuration) return;
 
         bool isMoving = diceVelocity.magnitude > velocityThreshold
                          || diceAngularVelocity.magnitude > velocityThreshold;
@@ -136,6 +175,7 @@ public class DiceController3D : NetworkBehaviour
         IsRolling = false;
 
         int number = GetTopFaceValue();
+
         var myData = FindMyPlayerData();
         if (myData == null) return;
 
@@ -150,24 +190,19 @@ public class DiceController3D : NetworkBehaviour
 
     public void RollForFirstTurn()
     {
-        Debug.Log("[진단] RollForFirstTurn 진입");
         if (IsRolling)
         {
-            Debug.Log("[진단] 취소: IsRolling=true");
             return;
         }
         var myData = FindMyPlayerData();
         if (myData == null)
         {
-            Debug.Log("[진단] 취소: myData=null");
             return;
         }
         if (!myData.CanRollForFirstTurn())
         {
-            Debug.Log($"[진단] 취소: CanRollForFirstTurn=false (StartRoll={myData.StartRoll})");
             return;
         }
-        Debug.Log("[진단] 통과 - DoPhysicalRoll 호출");
         DoPhysicalRoll();
     }
 
@@ -175,19 +210,18 @@ public class DiceController3D : NetworkBehaviour
     {
         if (IsRolling) return;
         DoPhysicalRoll();
-        StartCoroutine(RollTimeoutFailsafe());
+        int myVersion = rollVersion;
+        StartCoroutine(RollTimeoutFailsafe(myVersion));
     }
 
     public void RequestAndRoll()
     {
-        Debug.Log($"[진단] RequestAndRoll 호출됨. 현재 HasStateAuthority={Object.HasStateAuthority}");
         if (Object.HasStateAuthority)
         {
             RollForFirstTurn();
         }
         else
         {
-            Debug.Log("[진단] 권한 요청 시작");
             Object.RequestStateAuthority();
             StartCoroutine(WaitForAuthorityThenRoll());
         }
@@ -202,21 +236,47 @@ public class DiceController3D : NetworkBehaviour
             yield return null;
         }
 
-        Debug.Log($"[진단] 대기 종료. HasStateAuthority={Object.HasStateAuthority}, 남은시간={timeout:F2}");
-
         if (Object.HasStateAuthority)
         {
+            yield return new WaitForFixedUpdate();
             RollForFirstTurn();
+        }
+    }
+    public void RequestAndRollGameplay()
+    {
+        if (Object.HasStateAuthority)
+        {
+            RollGameplay();
         }
         else
         {
-            Debug.Log("[진단] 권한 획득 실패 - 타임아웃");
+            Object.RequestStateAuthority();
+            StartCoroutine(WaitForAuthorityThenRollGameplay());
         }
     }
 
-    IEnumerator RollTimeoutFailsafe()
+    IEnumerator WaitForAuthorityThenRollGameplay()
+    {
+        float timeout = 3f;
+        while (!Object.HasStateAuthority && timeout > 0f)
+        {
+            timeout -= Time.deltaTime;
+            yield return null;
+        }
+
+        if (Object.HasStateAuthority)
+        {
+            yield return new WaitForFixedUpdate(); // 권한 안정화 대기
+            RollGameplay();
+        }
+    }
+
+    IEnumerator RollTimeoutFailsafe(int version)
     {
         yield return new WaitForSeconds(8f);
+
+        if (version != rollVersion) yield break;
+
         if (IsRolling)
         {
             IsRolling = false;
@@ -231,41 +291,6 @@ public class DiceController3D : NetworkBehaviour
                 else DiceGroupController3D.Instance.OnDieLanded(diceIndex, number);
             }
         }
-    }
-
-    void DoPhysicalRoll()
-    {
-        if (rb == null)
-        {
-            Debug.Log("[진단] DoPhysicalRoll 취소: rb=null");
-            return;
-        }
-        if (!Object.HasStateAuthority)
-        {
-            Debug.Log("[진단] DoPhysicalRoll 취소: HasStateAuthority=false");
-            return;
-        }
-
-        Debug.Log("[진단] DoPhysicalRoll 실행 - 힘 가함");
-
-        IsRolling = true;
-        hasStartedMoving = false;
-        hasResolvedThisRoll = false;
-        stillTimer = 0f;
-
-        if (audioSource != null && diceRollClip != null)
-            audioSource.PlayOneShot(diceRollClip);
-
-        float dirX = Random.Range(0, 200);
-        float dirY = Random.Range(0, 200);
-        float dirZ = Random.Range(0, 200);
-
-        transform.position = initialSpawnPos;
-        transform.rotation = Quaternion.identity;
-        rb.velocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
-        rb.AddForce(Vector3.up * 300);
-        rb.AddTorque(dirX, dirY, dirZ);
     }
 
     PlayerData FindMyPlayerData()
