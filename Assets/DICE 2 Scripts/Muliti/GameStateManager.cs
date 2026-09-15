@@ -120,6 +120,9 @@ public class GameStateManager : NetworkBehaviour
         {
             DiceGroupController3D.Instance.ActivateGameplayDice();
         }
+
+        var firstTurnUI = FindObjectOfType<FirstTurnUIManager>(true);
+        if (firstTurnUI != null) firstTurnUI.HideTexts();
     }
 
     void OnCurrentTurnChanged()
@@ -131,9 +134,7 @@ public class GameStateManager : NetworkBehaviour
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     void RPC_TriggerRoll(PlayerRef target)
     {
-        Debug.Log($"[진단] RPC_TriggerRoll 수신. target={target}, 나={Runner.LocalPlayer}");
         if (Runner.LocalPlayer != target) return;
-        Debug.Log("[진단] 내 차례 맞음 - RequestAndRoll 호출");
         var dice = DiceGroupController3D.Instance != null ? DiceGroupController3D.Instance.FirstTurnDice : null;
         if (dice != null) dice.RequestAndRoll();
     }

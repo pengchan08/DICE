@@ -15,11 +15,25 @@ public class PlayerData : NetworkBehaviour
     [Networked] public int TotalScore { get; set; }
     [Networked, Capacity(12)] public NetworkArray<NetworkBool> UsedCombos => default;
 
-    [Networked] public int HeldCardType { get; set; } // -1: 없음, 0~3: 카드 종류
+    [Networked] public int HeldCardType { get; set; } // -1: 없음, 0: 추가굴리기, 1: 주사위변경, 2: 점수증가, 3: 부분재굴림
     [Networked] public NetworkBool HasUsedCardThisTurn { get; set; }
+    [Networked] public int BonusRolls { get; set; } // 능력 카드로 얻은 추가 굴리기 횟수 (턴 종료 시 초기화)
+
+    [Networked] public NetworkString<_64> ActionLog { get; set; } // 마지막 행동 메시지 (조합 선택 / 카드 사용)
 
     public const int MaxRollsPerTurn = 3;
     private bool hasLoggedOnce = false;
+
+    private static readonly string[] ComboNames = new string[]
+    {
+        "Ones", "Twos", "Threes", "Fours", "Fives", "Sixes",
+        "Choice", "Four of a Kind", "Full House", "Small Straight", "Big Straight", "Yacht"
+    };
+
+    private static readonly string[] CardNames = new string[]
+    {
+        "추가 굴리기", "주사위 변경", "점수 증가", "부분 재굴림"
+    };
 
     public override void Spawned()
     {
@@ -36,6 +50,12 @@ public class PlayerData : NetworkBehaviour
             }
             RollCount = 0;
             TotalScore = 0;
+
+            // TODO: 4종 카드가 모두 구현되면 Random.Range(0, 4)로 교체
+            HeldCardType = 0; // 지금은 "추가 굴리기" 카드로 고정 지급 (프로토타입 검증용)
+            HasUsedCardThisTurn = false;
+            BonusRolls = 0;
+            ActionLog = "";
         }
     }
 
@@ -84,12 +104,18 @@ public class PlayerData : NetworkBehaviour
         StartRoll = 0;
     }
 
+    // 능력 카드로 늘어난 굴리기 횟수를 포함한, 이번 턴의 실제 최대 굴리기 횟수
+    public int GetMaxRollsThisTurn()
+    {
+        return MaxRollsPerTurn + BonusRolls;
+    }
+
     public bool CanRollNow()
     {
         if (!Object.HasStateAuthority) return false;
         var gameState = FindObjectOfType<GameStateManager>();
         if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return false;
-        if (RollCount >= MaxRollsPerTurn) return false;
+        if (RollCount >= GetMaxRollsThisTurn()) return false;
         return true;
     }
 
@@ -98,13 +124,52 @@ public class PlayerData : NetworkBehaviour
         if (!Object.HasStateAuthority) return false;
         var gameState = FindObjectOfType<GameStateManager>();
         if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return false;
-        return RollCount < MaxRollsPerTurn;
+        return RollCount < GetMaxRollsThisTurn();
     }
 
     public void IncrementRollCount()
     {
         if (!Object.HasStateAuthority) return;
         RollCount++;
+    }
+
+    public bool CanUseAbilityCard()
+    {
+        if (!Object.HasStateAuthority) return false;
+        var gameState = FindObjectOfType<GameStateManager>();
+        if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return false;
+        if (HeldCardType == -1) return false;
+        if (HasUsedCardThisTurn) return false;
+        return true;
+    }
+
+    public void UseAbilityCard()
+    {
+        if (!CanUseAbilityCard()) return;
+
+        int usedCardType = HeldCardType;
+
+        switch (usedCardType)
+        {
+            case 0: // 추가 굴리기
+                BonusRolls++;
+                break;
+
+            // case 1: // 주사위 변경 - 추후 구현
+            // case 2: // 조합 점수 증가 - 추후 구현
+            // case 3: // 부분 재굴림 - 추후 구현
+
+            default:
+                return; // 아직 구현되지 않은 카드는 사용 취소 (소모하지 않음)
+        }
+
+        HeldCardType = -1; // 카드 소모 (게임당 1장이므로 재지급 없음)
+        HasUsedCardThisTurn = true;
+
+        string cardName = (usedCardType >= 0 && usedCardType < CardNames.Length) ? CardNames[usedCardType] : "?";
+        ActionLog = $"{PlayerName} : {cardName} 카드 사용";
+
+        Debug.Log($"[능력 카드] {PlayerName}: {cardName} 카드 사용 (이번 턴 최대 굴리기: {GetMaxRollsThisTurn()}회)");
     }
 
     public void SetDiceResult(int diceIndex, int result)
@@ -148,7 +213,7 @@ public class PlayerData : NetworkBehaviour
     {
         int sum = 0;
         for (int i = 0; i < 5; i++) sum += DiceSlots[i];
-        return Mathf.Min(sum, 30); // 최대 30점 제한
+        return Mathf.Min(sum, 30);
     }
 
     public int GetFourOfAKindScore()
@@ -158,7 +223,7 @@ public class PlayerData : NetworkBehaviour
 
         for (int i = 1; i <= 6; i++)
         {
-            if (count[i] >= 4) return Mathf.Min(i * 4, 24); // 최대 24점 제한
+            if (count[i] >= 4) return Mathf.Min(i * 4, 24);
         }
         return 0;
     }
@@ -192,7 +257,6 @@ public class PlayerData : NetworkBehaviour
             if (DiceSlots[i] > 0) present[DiceSlots[i]] = true;
         }
 
-        // 1~4 연속, 2~5 연속, 3~6 연속 중 하나라도 있으면 인정 (4개 이상 이어짐)
         for (int start = 1; start <= 3; start++)
         {
             bool ok = true;
@@ -254,7 +318,7 @@ public class PlayerData : NetworkBehaviour
     public void ApplyScore(int comboIndex)
     {
         if (!Object.HasStateAuthority) return;
-        if (UsedCombos[comboIndex]) return; // 이미 쓴 조합이면 무시
+        if (UsedCombos[comboIndex]) return;
 
         var gameState = FindObjectOfType<GameStateManager>();
         if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority)
@@ -267,13 +331,17 @@ public class PlayerData : NetworkBehaviour
         TotalScore += score;
         UsedCombos.Set(comboIndex, true);
 
-        // 다음 턴을 위해 슬롯/굴리기 횟수 초기화
+        string comboName = (comboIndex >= 0 && comboIndex < ComboNames.Length) ? ComboNames[comboIndex] : "?";
+        ActionLog = $"{PlayerName} : {comboName} 선택 ({score}점)";
+
         for (int i = 0; i < 5; i++)
         {
             DiceSlots.Set(i, 0);
             HeldDice.Set(i, false);
         }
         RollCount = 0;
+        BonusRolls = 0;
+        HasUsedCardThisTurn = false;
 
         Debug.Log($"[조합 선택] {PlayerName}: 조합 {comboIndex}번 선택, {score}점 획득 (총점: {TotalScore})");
 
@@ -291,53 +359,4 @@ public class PlayerData : NetworkBehaviour
         }
         return true;
     }
-
-    // void TriggerPhysicalReroll()
-    // {
-    //     var diceController = FindObjectOfType<DiceController3D>();
-    //     if (diceController != null)
-    //     {
-    //         diceController.RollForFirstTurn();
-    //     }
-    // }
-
-    // public void ResetAndReroll()
-    // {
-    //     if (Object.HasStateAuthority)
-    //     {
-    //         StartRoll = 0;
-    //         Invoke(nameof(TriggerPhysicalReroll), 0.5f);
-    //     }
-    // }
-
-    // public void RollDice(int result)
-    // {
-    //     if (!CanRollNow()) return; // 안전장치: 여기서도 한 번 더 확인
-
-    //     SaveToSlot(result);
-    //     RollCount++;
-
-    //     Debug.Log($"[주사위 굴림] {PlayerName}: {result} (남은 횟수: {8 - RollCount})");
-    // }
-
-    // bool AreAllSlotsFilled()
-    // {
-    //     for (int i = 0; i < 5; i++)
-    //     {
-    //         if (DiceSlots[i] == 0) return false;
-    //     }
-    //     return true;
-    // }
-
-    // void SaveToSlot(int number)
-    // {
-    //     for (int i = 0; i < 5; i++)
-    //     {
-    //         if (DiceSlots[i] == 0)
-    //         {
-    //             DiceSlots.Set(i, number);
-    //             break;
-    //         }
-    //     }
-    // }
 }

@@ -39,6 +39,8 @@ public class GameplayDiceUIManager : MonoBehaviour
 
         bool isDiceRolling = DiceGroupController3D.Instance != null && DiceGroupController3D.Instance.IsAnyDiceRolling;
 
+        int maxRollsThisTurn = myData.GetMaxRollsThisTurn();
+
         for (int i = 0; i < 5; i++)
         {
             int value = myData.DiceSlots[i];
@@ -51,10 +53,10 @@ public class GameplayDiceUIManager : MonoBehaviour
             diceSlotButtons[i].interactable = canToggle;
         }
 
-        bool canRoll = isMyTurn && !isDiceRolling && myData.RollCount < PlayerData.MaxRollsPerTurn;
+        bool canRoll = isMyTurn && !isDiceRolling && myData.RollCount < maxRollsThisTurn;
         rollButton.interactable = canRoll;
 
-        rollCountText.text = $"남은 굴리기 : {PlayerData.MaxRollsPerTurn - myData.RollCount}회";
+        rollCountText.text = $"남은 굴리기 : {maxRollsThisTurn - myData.RollCount}회";
     }
 
     void OnSlotClicked(int index)
