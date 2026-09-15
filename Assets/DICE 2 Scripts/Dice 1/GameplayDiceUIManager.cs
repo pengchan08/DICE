@@ -49,7 +49,7 @@ public class GameplayDiceUIManager : MonoBehaviour
             diceValueTexts[i].text = value == 0 ? "-" : value.ToString();
             slotBackgrounds[i].color = isHeld ? heldColor : normalColor;
 
-            bool canToggle = isMyTurn && !isDiceRolling && value != 0 && myData.RollCount < PlayerData.MaxRollsPerTurn;
+            bool canToggle = isMyTurn && !isDiceRolling && value != 0;
             diceSlotButtons[i].interactable = canToggle;
         }
 

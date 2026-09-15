@@ -18,6 +18,8 @@ public class PlayerData : NetworkBehaviour
     [Networked] public int HeldCardType { get; set; } // -1: 없음, 0: 추가굴리기, 1: 주사위변경, 2: 점수증가, 3: 부분재굴림
     [Networked] public NetworkBool HasUsedCardThisTurn { get; set; }
     [Networked] public int BonusRolls { get; set; } // 능력 카드로 얻은 추가 굴리기 횟수 (턴 종료 시 초기화)
+    [Networked] public int PendingScoreBonus { get; set; }
+    private const int ScoreBonusAmount = 20;
 
     [Networked] public NetworkString<_64> ActionLog { get; set; } // 마지막 행동 메시지 (조합 선택 / 카드 사용)
 
@@ -55,6 +57,7 @@ public class PlayerData : NetworkBehaviour
             HeldCardType = 0; // 지금은 "추가 굴리기" 카드로 고정 지급 (프로토타입 검증용)
             HasUsedCardThisTurn = false;
             BonusRolls = 0;
+            PendingScoreBonus = 0;
             ActionLog = "";
         }
     }
@@ -155,8 +158,11 @@ public class PlayerData : NetworkBehaviour
                 BonusRolls++;
                 break;
 
+            case 2: // 조합 점수 증가
+                PendingScoreBonus += ScoreBonusAmount;
+                break;
+
             // case 1: // 주사위 변경 - 추후 구현
-            // case 2: // 조합 점수 증가 - 추후 구현
             // case 3: // 부분 재굴림 - 추후 구현
 
             default:
@@ -168,8 +174,6 @@ public class PlayerData : NetworkBehaviour
 
         string cardName = (usedCardType >= 0 && usedCardType < CardNames.Length) ? CardNames[usedCardType] : "?";
         ActionLog = $"{PlayerName} : {cardName} 카드 사용";
-
-        Debug.Log($"[능력 카드] {PlayerName}: {cardName} 카드 사용 (이번 턴 최대 굴리기: {GetMaxRollsThisTurn()}회)");
     }
 
     public void SetDiceResult(int diceIndex, int result)
@@ -242,9 +246,7 @@ public class PlayerData : NetworkBehaviour
 
         if (hasThree && hasTwo)
         {
-            int sum = 0;
-            for (int i = 0; i < 5; i++) sum += DiceSlots[i];
-            return sum;
+            return 25;
         }
         return 0;
     }
@@ -321,18 +323,25 @@ public class PlayerData : NetworkBehaviour
         if (UsedCombos[comboIndex]) return;
 
         var gameState = FindObjectOfType<GameStateManager>();
-        if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority)
-        {
-            Debug.LogWarning("지금은 당신의 턴이 아닙니다.");
-            return;
-        }
+        if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return;
 
         int score = GetComboScore(comboIndex);
+
+        bool bonusApplied = false;
+        if (PendingScoreBonus > 0)
+        {
+            score += PendingScoreBonus;
+            PendingScoreBonus = 0;
+            bonusApplied = true;
+        }
+
         TotalScore += score;
         UsedCombos.Set(comboIndex, true);
 
         string comboName = (comboIndex >= 0 && comboIndex < ComboNames.Length) ? ComboNames[comboIndex] : "?";
-        ActionLog = $"{PlayerName} : {comboName} 선택 ({score}점)";
+        ActionLog = bonusApplied
+            ? $"{PlayerName} : {comboName} 선택 ({score}점, 카드 보너스 포함)"
+            : $"{PlayerName} : {comboName} 선택 ({score}점)";
 
         for (int i = 0; i < 5; i++)
         {
@@ -342,8 +351,6 @@ public class PlayerData : NetworkBehaviour
         RollCount = 0;
         BonusRolls = 0;
         HasUsedCardThisTurn = false;
-
-        Debug.Log($"[조합 선택] {PlayerName}: 조합 {comboIndex}번 선택, {score}점 획득 (총점: {TotalScore})");
 
         if (gameState != null)
         {

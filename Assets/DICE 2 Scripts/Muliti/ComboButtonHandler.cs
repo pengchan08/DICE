@@ -42,7 +42,7 @@ public class ComboButtonHandler : MonoBehaviour
         }
         else
         {
-            int previewScore = myData.GetComboScore(comboIndex);
+            int previewScore = myData.GetComboScore(comboIndex) + myData.PendingScoreBonus;
             buttonText.text = $"{comboName} ({previewScore})";
             GetComponent<Button>().interactable = isMyTurn;
         }
