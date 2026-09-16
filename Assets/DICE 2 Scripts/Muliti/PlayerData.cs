@@ -54,7 +54,7 @@ public class PlayerData : NetworkBehaviour
             TotalScore = 0;
 
             // TODO: 4종 카드가 모두 구현되면 Random.Range(0, 4)로 교체
-            HeldCardType = 0; // 지금은 "추가 굴리기" 카드로 고정 지급 (프로토타입 검증용)
+            HeldCardType = -1;
             HasUsedCardThisTurn = false;
             BonusRolls = 0;
             PendingScoreBonus = 0;
@@ -105,6 +105,20 @@ public class PlayerData : NetworkBehaviour
     {
         if (!Object.HasStateAuthority) return;
         StartRoll = 0;
+    }
+
+    public void ResetBoardForNewTurn()
+    {
+        if (!Object.HasStateAuthority) return;
+
+        for (int i = 0; i < 5; i++)
+        {
+            DiceSlots.Set(i, 0);
+            HeldDice.Set(i, false);
+        }
+        RollCount = 0;
+        BonusRolls = 0;
+        HasUsedCardThisTurn = false;
     }
 
     // 능력 카드로 늘어난 굴리기 횟수를 포함한, 이번 턴의 실제 최대 굴리기 횟수
@@ -174,6 +188,12 @@ public class PlayerData : NetworkBehaviour
 
         string cardName = (usedCardType >= 0 && usedCardType < CardNames.Length) ? CardNames[usedCardType] : "?";
         ActionLog = $"{PlayerName} : {cardName} 카드 사용";
+    }
+
+    public void AssignCard(int cardType)
+    {
+        if (!Object.HasStateAuthority) return;
+        HeldCardType = cardType;
     }
 
     public void SetDiceResult(int diceIndex, int result)
