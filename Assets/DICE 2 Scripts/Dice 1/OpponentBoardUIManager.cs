@@ -4,11 +4,11 @@ using System.Linq;
 
 public class OpponentBoardUIManager : MonoBehaviour
 {
+    [Header("상대 턴 UI 루트 (상대 턴에만 활성화)")]
+    public GameObject opponentBoardPanel;
+
     [Header("상대 주사위 슬롯 5개 (읽기 전용)")]
     public Text[] opponentDiceValueTexts = new Text[5];
-
-    [Header("상대 이름/현재 총점")]
-    public Text opponentNameText;
 
     void Update()
     {
@@ -16,13 +16,16 @@ public class OpponentBoardUIManager : MonoBehaviour
             .Where(p => p != null && p.Object != null && p.Object.IsValid)
             .ToList();
 
+        var myData = players.FirstOrDefault(p => p.Object.HasStateAuthority);
         var opponentData = players.FirstOrDefault(p => !p.Object.HasStateAuthority);
-        if (opponentData == null) return;
+        if (myData == null || opponentData == null) return;
 
-        if (opponentNameText != null)
-        {
-            opponentNameText.text = $"{opponentData.PlayerName} : {opponentData.TotalScore}점";
-        }
+        var gameState = FindObjectOfType<GameStateManager>();
+        bool isMyTurn = gameState != null && gameState.FirstTurnDecided
+                        && gameState.CurrentTurnPlayer == myData.Object.InputAuthority;
+
+        if (opponentBoardPanel != null) opponentBoardPanel.SetActive(!isMyTurn);
+        if (isMyTurn) return;
 
         for (int i = 0; i < 5; i++)
         {

@@ -19,11 +19,14 @@ public class PlayerData : NetworkBehaviour
     [Networked] public NetworkBool HasUsedCardThisTurn { get; set; }
     [Networked] public int BonusRolls { get; set; } // 능력 카드로 얻은 추가 굴리기 횟수 (턴 종료 시 초기화)
     [Networked] public int PendingScoreBonus { get; set; }
-    private const int ScoreBonusAmount = 20;
+
+    [Networked] public int PendingCardAction { get; set; }
+    [Networked] public int PendingCardTargetSlot { get; set; }
 
     [Networked] public NetworkString<_64> ActionLog { get; set; } // 마지막 행동 메시지 (조합 선택 / 카드 사용)
 
     public const int MaxRollsPerTurn = 3;
+    private const int ScoreBonusAmount = 15;
     private bool hasLoggedOnce = false;
 
     private static readonly string[] ComboNames = new string[]
@@ -53,11 +56,12 @@ public class PlayerData : NetworkBehaviour
             RollCount = 0;
             TotalScore = 0;
 
-            // TODO: 4종 카드가 모두 구현되면 Random.Range(0, 4)로 교체
             HeldCardType = -1;
             HasUsedCardThisTurn = false;
             BonusRolls = 0;
             PendingScoreBonus = 0;
+            PendingCardAction = -1;
+            PendingCardTargetSlot = -1;
             ActionLog = "";
         }
     }
@@ -121,7 +125,6 @@ public class PlayerData : NetworkBehaviour
         HasUsedCardThisTurn = false;
     }
 
-    // 능력 카드로 늘어난 굴리기 횟수를 포함한, 이번 턴의 실제 최대 굴리기 횟수
     public int GetMaxRollsThisTurn()
     {
         return MaxRollsPerTurn + BonusRolls;
@@ -157,6 +160,7 @@ public class PlayerData : NetworkBehaviour
         if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return false;
         if (HeldCardType == -1) return false;
         if (HasUsedCardThisTurn) return false;
+        if (PendingCardAction != -1) return false;
         return true;
     }
 
@@ -164,30 +168,83 @@ public class PlayerData : NetworkBehaviour
     {
         if (!CanUseAbilityCard()) return;
 
-        int usedCardType = HeldCardType;
-
-        switch (usedCardType)
+        switch (HeldCardType)
         {
             case 0: // 추가 굴리기
                 BonusRolls++;
+                HeldCardType = -1;
+                HasUsedCardThisTurn = true;
+                ActionLog = $"{PlayerName} : 추가 굴리기 카드 사용";
                 break;
 
             case 2: // 조합 점수 증가
                 PendingScoreBonus += ScoreBonusAmount;
+                HeldCardType = -1;
+                HasUsedCardThisTurn = true;
+                ActionLog = $"{PlayerName} : 점수 증가 카드 사용";
                 break;
 
-            // case 1: // 주사위 변경 - 추후 구현
-            // case 3: // 부분 재굴림 - 추후 구현
+            case 1: // 주사위 변경 - 추후 구현
+                PendingCardAction = 1;
+                break;
+
+            case 3: // 부분 재굴림 - 추후 구현
+                PendingCardAction = 3;
+                break;
 
             default:
-                return; // 아직 구현되지 않은 카드는 사용 취소 (소모하지 않음)
+                return;
         }
+    }
 
-        HeldCardType = -1; // 카드 소모 (게임당 1장이므로 재지급 없음)
+    public void SelectDiceForCardAction(int slotIndex)
+    {
+        if (!Object.HasStateAuthority) return;
+        if (slotIndex < 0 || slotIndex >= 5) return;
+        if (DiceSlots[slotIndex] == 0) return;
+
+        if (PendingCardAction == 1)
+        {
+            PendingCardTargetSlot = slotIndex;
+            PendingCardAction = 2;
+        }
+        else if (PendingCardAction == 3)
+        {
+            PendingCardTargetSlot = slotIndex;
+
+            if (DiceGroupController3D.Instance != null)
+            {
+                DiceGroupController3D.Instance.RollSingleDieForCard(slotIndex);
+            }
+
+            HeldCardType = -1;
+            HasUsedCardThisTurn = true;
+            PendingCardAction = -1;
+            ActionLog = $"{PlayerName} : 부분 재굴림 카드 사용";
+        }
+    }
+
+    public void ConfirmDiceChange(int newValue)
+    {
+        if (!Object.HasStateAuthority) return;
+        if (PendingCardAction != 2) return;
+        if (newValue < 1 || newValue > 6) return;
+
+        int targetSlot = PendingCardTargetSlot;
+        DiceSlots.Set(targetSlot, newValue);
+
+        HeldCardType = -1;
         HasUsedCardThisTurn = true;
+        PendingCardAction = -1;
+        PendingCardTargetSlot = -1;
+        ActionLog = $"{PlayerName} : 주사위 변경 카드 사용 ({targetSlot + 1}번 슬롯 > {newValue})";
+    }
 
-        string cardName = (usedCardType >= 0 && usedCardType < CardNames.Length) ? CardNames[usedCardType] : "?";
-        ActionLog = $"{PlayerName} : {cardName} 카드 사용";
+    public void CancelCardAction()
+    {
+        if (!Object.HasStateAuthority) return;
+        PendingCardAction = -1;
+        PendingCardTargetSlot = -1;
     }
 
     public void AssignCard(int cardType)

@@ -6,13 +6,10 @@ using System.Linq;
 public class GameUIManager : MonoBehaviour
 {
     [Header("주사위 슬롯")]
-    public Text[] diceSlotTexts; // 5개를 인스펙터에서 순서대로 연결
+    public Text[] diceSlotTexts;
     public Button rollDiceButton;
 
     public Text currentTurnText;
-    public Button endTurnButton;
-
-    public ComboButtonHandler[] comboButtons; // 10개를 인스펙터에서 연결
 
     [Header("3D 주사위")]
     public DiceController3D diceController;
@@ -21,12 +18,15 @@ public class GameUIManager : MonoBehaviour
     public Text player1ScoreText;
     public Text player2ScoreText;
 
+    [Header("내 점수 강조 색상")]
+    public Color myScoreColor = Color.yellow;
+    public Color opponentScoreColor = Color.white;
+
     private GameStateManager _gameState;
     private NetworkRunner _runner;
 
     void Start()
     {
-        endTurnButton.onClick.AddListener(OnEndTurnClicked);
         rollDiceButton.onClick.AddListener(OnRollDiceClicked);
         _runner = FindObjectOfType<NetworkRunner>();
     }
@@ -53,7 +53,6 @@ public class GameUIManager : MonoBehaviour
         {
             bool isMyTurn = _gameState.CurrentTurnPlayer == _runner.LocalPlayer;
             currentTurnText.text = isMyTurn ? "현재 턴: 내 턴" : $"현재 턴: {currentPlayerData.PlayerName}";
-            endTurnButton.interactable = isMyTurn;
             rollDiceButton.interactable = isMyTurn;
         }
 
@@ -65,16 +64,9 @@ public class GameUIManager : MonoBehaviour
         var myData = FindMyPlayerData();
         if (myData == null) return;
 
-        bool isMyTurn = _gameState != null && _gameState.CurrentTurnPlayer == _runner.LocalPlayer;
-
         for (int i = 0; i < 5; i++)
         {
             diceSlotTexts[i].text = myData.DiceSlots[i].ToString();
-        }
-
-        foreach (var combo in comboButtons)
-        {
-            combo.Refresh(myData, isMyTurn);
         }
 
         RefreshScores();
@@ -88,17 +80,18 @@ public class GameUIManager : MonoBehaviour
 
         if (players.Count < 1) return;
 
-        // 방장을 항상 Player1 자리에, 참가자를 Player2 자리에 표시 (화면에서 위치가 안 바뀌도록)
         var p1 = players.FirstOrDefault(p => p.IsHost);
         var p2 = players.FirstOrDefault(p => !p.IsHost);
 
         if (p1 != null)
         {
             player1ScoreText.text = $"{p1.PlayerName} : {p1.TotalScore}점";
+            player1ScoreText.color = p1.Object.HasStateAuthority ? myScoreColor : opponentScoreColor;
         }
         if (p2 != null)
         {
             player2ScoreText.text = $"{p2.PlayerName} : {p2.TotalScore}점";
+            player2ScoreText.color = p2.Object.HasStateAuthority ? myScoreColor : opponentScoreColor;
         }
     }
 
@@ -107,14 +100,6 @@ public class GameUIManager : MonoBehaviour
         if (diceController != null)
         {
             DiceGroupController3D.Instance.RollNonHeldDice();
-        }
-    }
-
-    void OnEndTurnClicked()
-    {
-        if (_gameState != null)
-        {
-            _gameState.RPC_EndTurn();
         }
     }
 

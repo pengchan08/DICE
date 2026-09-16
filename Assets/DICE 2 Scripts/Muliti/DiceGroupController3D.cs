@@ -20,7 +20,22 @@ public class DiceGroupController3D : MonoBehaviour
     private int pendingCount = 0;
     private DiceController3D firstTurnDiceController;
     public DiceController3D FirstTurnDice => firstTurnDiceController;
-    public bool IsAnyDiceRolling => pendingCount > 0;
+    public bool IsAnyDiceRolling
+    {
+        get
+        {
+            if (pendingCount > 0) return true;
+
+            if (diceControllers != null)
+            {
+                foreach (var dc in diceControllers)
+                {
+                    if (dc != null && dc.IsRolling) return true;
+                }
+            }
+            return false;
+        }
+    }
 
     void Awake()
     {
@@ -82,11 +97,7 @@ public class DiceGroupController3D : MonoBehaviour
 
     public void RollNonHeldDice()
     {
-        if (pendingCount > 0)
-        {
-            Debug.LogWarning($"[진단] 재굴림 무시됨. 현재 pendingCount={pendingCount}");
-            return;
-        }
+        if (pendingCount > 0) return;
 
         var myData = FindMyPlayerData();
         if (myData == null) return;
@@ -95,12 +106,9 @@ public class DiceGroupController3D : MonoBehaviour
         pendingCount = 0;
         bool rolledAny = false;
 
-        Debug.Log("[진단] === 새 굴림 시작 ===");
-
         for (int i = 0; i < 5; i++)
         {
             bool isHeld = myData.HeldDice[i];
-            Debug.Log($"[진단] 슬롯 {i}: Held={isHeld}");
             if (!isHeld)
             {
                 pendingCount++;
@@ -110,10 +118,19 @@ public class DiceGroupController3D : MonoBehaviour
             }
         }
 
-        Debug.Log($"[진단] 이번 굴림 대상 개수(pendingCount)={pendingCount}");
-
         if (!rolledAny) return;
         myData.IncrementRollCount();
+    }
+
+    public void RollSingleDieForCard(int slotIndex)
+    {
+        if (slotIndex < 0 || slotIndex >= diceControllers.Length) return;
+
+        var dc = diceControllers[slotIndex];
+        if (dc == null) return;
+
+        pendingCount++;
+        dc.RequestAndRollGameplay();
     }
 
     public void OnDieLanded(int diceIndex, int number)
@@ -121,12 +138,8 @@ public class DiceGroupController3D : MonoBehaviour
         var myData = FindMyPlayerData();
         if (myData == null) return;
 
-        Debug.Log($"[진단] OnDieLanded 호출: diceIndex={diceIndex}, number={number}, 호출 전 pendingCount={pendingCount}");
-
         myData.SetDiceResult(diceIndex, number);
         pendingCount--;
-
-        Debug.Log($"[진단] 호출 후 pendingCount={pendingCount}");
     }
 
     public void ForceResolveDie(int diceIndex)

@@ -4,10 +4,13 @@ using System.Linq;
 
 public class GameplayDiceUIManager : MonoBehaviour
 {
+    [Header("내 턴 UI 루트 (내 턴에만 활성화)")]
+    public GameObject selfBoardPanel;
+
     [Header("주사위 슬롯 5개")]
-    public Text[] diceValueTexts = new Text[5];   // 각 슬롯의 숫자 표시
-    public Button[] diceSlotButtons = new Button[5]; // 각 슬롯 클릭 = Hold 토글
-    public Image[] slotBackgrounds = new Image[5];   // Hold 시 색 바뀔 배경
+    public Text[] diceValueTexts = new Text[5];
+    public Button[] diceSlotButtons = new Button[5];
+    public Image[] slotBackgrounds = new Image[5];
 
     [Header("색상")]
     public Color normalColor = Color.white;
@@ -21,7 +24,7 @@ public class GameplayDiceUIManager : MonoBehaviour
     {
         for (int i = 0; i < 5; i++)
         {
-            int index = i; // 클로저 캡처 주의
+            int index = i;
             diceSlotButtons[i].onClick.AddListener(() => OnSlotClicked(index));
         }
 
@@ -37,8 +40,10 @@ public class GameplayDiceUIManager : MonoBehaviour
         bool isMyTurn = gameState != null && gameState.FirstTurnDecided
                         && gameState.CurrentTurnPlayer == myData.Object.InputAuthority;
 
-        bool isDiceRolling = DiceGroupController3D.Instance != null && DiceGroupController3D.Instance.IsAnyDiceRolling;
+        if (selfBoardPanel != null) selfBoardPanel.SetActive(isMyTurn);
+        if (!isMyTurn) return;
 
+        bool isDiceRolling = DiceGroupController3D.Instance != null && DiceGroupController3D.Instance.IsAnyDiceRolling;
         int maxRollsThisTurn = myData.GetMaxRollsThisTurn();
 
         for (int i = 0; i < 5; i++)
@@ -63,6 +68,12 @@ public class GameplayDiceUIManager : MonoBehaviour
     {
         var myData = FindMyPlayerData();
         if (myData == null) return;
+
+        if (myData.PendingCardAction == 1 || myData.PendingCardAction == 3)
+        {
+            myData.SelectDiceForCardAction(index);
+            return;
+        }
 
         myData.ToggleHold(index);
     }

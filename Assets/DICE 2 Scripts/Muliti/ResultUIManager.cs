@@ -5,13 +5,20 @@ using System.Linq;
 
 public class ResultUIManager : MonoBehaviour
 {
-    public GameObject gameCanvas; // 게임 화면을 꺼야 하니까
+    public GameObject gameCanvas;
     public GameObject resultCanvas;
     public GameObject mainMenuCanvas;
 
     public Text winnerText;
-    public Text player1ResultText;
-    public Text player2ResultText;
+
+    [Header("플레이어 1")]
+    public Text player1NameText;
+    public Text player1ScoreText;
+
+    [Header("플레이어 2")]
+    public Text player2NameText;
+    public Text player2ScoreText;
+
     public Button leaveButton;
 
     void Start()
@@ -30,8 +37,11 @@ public class ResultUIManager : MonoBehaviour
         var p1 = players[0];
         var p2 = players[1];
 
-        player1ResultText.text = $"{p1.PlayerName} : {p1.TotalScore}점";
-        player2ResultText.text = $"{p2.PlayerName} : {p2.TotalScore}점";
+        player1NameText.text = p1.PlayerName.ToString();
+        player1ScoreText.text = $"{p1.TotalScore}점";
+
+        player2NameText.text = p2.PlayerName.ToString();
+        player2ScoreText.text = $"{p2.TotalScore}점";
 
         if (p1.TotalScore == p2.TotalScore)
         {
