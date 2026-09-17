@@ -39,6 +39,10 @@ public class DiceController3D : NetworkBehaviour
     private const float minRollDuration = 0.5f;
 
     private int rollVersion = 0;
+    private float lastTopFaceConfidence = 0f;
+    private const float topFaceConfidenceThreshold = 0.97f;
+    private int nudgeAttempts = 0;
+    private const int maxNudgeAttempts = 5;
 
     void Awake()
     {
@@ -107,6 +111,7 @@ public class DiceController3D : NetworkBehaviour
         hasResolvedThisRoll = false;
         stillTimer = 0f;
         rollStartTime = Time.time;
+        nudgeAttempts = 0;
 
         if (audioSource != null && diceRollClip != null)
             audioSource.PlayOneShot(diceRollClip);
@@ -150,7 +155,38 @@ public class DiceController3D : NetworkBehaviour
 
         if (hasStartedMoving && !hasResolvedThisRoll && stillTimer >= requiredStillTime)
         {
+            GetTopFaceValue();
+
+            if (lastTopFaceConfidence >= topFaceConfidenceThreshold)
+            {
+                ResolveTopFace();
+            }
+            else
+            {
+                NudgeToSettle();
+            }
+        }
+    }
+
+    void NudgeToSettle()
+    {
+        nudgeAttempts++;
+        stillTimer = 0f;
+
+        if (nudgeAttempts > maxNudgeAttempts)
+        {
             ResolveTopFace();
+            return;
+        }
+
+        if (rb != null)
+        {
+            rb.AddTorque(new Vector3(
+                Random.Range(-40f, 40f),
+                Random.Range(-40f, 40f),
+                Random.Range(-40f, 40f)
+            ), ForceMode.Impulse);
+            rb.AddForce(Vector3.up * 15f, ForceMode.Impulse);
         }
     }
 
@@ -166,6 +202,7 @@ public class DiceController3D : NetworkBehaviour
             if (dot > bestDot) { bestDot = dot; bestValue = pair.Key; }
         }
 
+        lastTopFaceConfidence = bestDot;
         return useOppositeFace ? (7 - bestValue) : bestValue;
     }
 

@@ -14,10 +14,14 @@ public class WaitingRoomManager : MonoBehaviour
     [Header("플레이어 1")]
     public Text player1NameText;
     public Text player1StatusText;
+    public GameObject player1ReadyObject;
+    public GameObject player1NormalObject;
 
     [Header("플레이어 2")]
     public Text player2NameText;
     public Text player2StatusText;
+    public GameObject player2ReadyObject;
+    public GameObject player2NormalObject;
 
     [Header("버튼")]
     public Button readyButton;
@@ -44,7 +48,6 @@ public class WaitingRoomManager : MonoBehaviour
     {
         _runner = FindObjectOfType<NetworkRunner>();
 
-        // 세션 속성에서 방 이름을 읽어옴 (방장이든 참가자든 동일하게 동작)
         string roomName = "-";
         if (_runner != null && _runner.SessionInfo.Properties.TryGetValue("RoomName", out var prop))
         {
@@ -66,7 +69,6 @@ public class WaitingRoomManager : MonoBehaviour
 
     void RefreshPlayerList()
     {
-        // 씬에 있는 모든 PlayerData를 찾고, 방장이 먼저 오도록 정렬
         var players = FindObjectsOfType<PlayerData>()
             .Where(p => p != null && p.Object != null && p.Object.IsValid)
             .OrderByDescending(p => (bool)p.IsHost)
@@ -75,7 +77,6 @@ public class WaitingRoomManager : MonoBehaviour
         bool anyHostPresent = players.Any(p => p.IsHost);
         var myData = players.FirstOrDefault(p => p.Object.HasStateAuthority);
 
-        // 방장이 안 보이는 상황이면, 바로 승격하지 않고 잠깐 기다렸다가 재확인
         if (!anyHostPresent && myData != null && !isCheckingPromotion)
         {
             StartCoroutine(ConfirmAndPromote(myData));
@@ -88,11 +89,13 @@ public class WaitingRoomManager : MonoBehaviour
             var p = players[0];
             player1NameText.text = p.PlayerName.ToString() + (p.IsHost ? " (방장)" : " (참가자)");
             player1StatusText.text = p.IsReady ? "READY" : "WAITING";
+            SetReadyVisual(player1ReadyObject, player1NormalObject, p.IsReady);
         }
         else
         {
             player1NameText.text = "-";
             player1StatusText.text = "";
+            SetReadyVisual(player1ReadyObject, player1NormalObject, false);
         }
 
         if (players.Count >= 2)
@@ -100,11 +103,13 @@ public class WaitingRoomManager : MonoBehaviour
             var p = players[1];
             player2NameText.text = p.PlayerName.ToString() + (p.IsHost ? " (방장)" : " (참가자)");
             player2StatusText.text = p.IsReady ? "READY" : "WAITING";
+            SetReadyVisual(player2ReadyObject, player2NormalObject, p.IsReady);
         }
         else
         {
             player2NameText.text = "-";
             player2StatusText.text = "";
+            SetReadyVisual(player2ReadyObject, player2NormalObject, false);
         }
 
         bool allReady = players.Count == 2 && players.All(p => p.IsReady);
@@ -112,12 +117,17 @@ public class WaitingRoomManager : MonoBehaviour
         startGameButton.interactable = allReady;
     }
 
+    void SetReadyVisual(GameObject readyObj, GameObject normalObj, bool isReady)
+    {
+        if (readyObj != null) readyObj.SetActive(isReady);
+        if (normalObj != null) normalObj.SetActive(!isReady);
+    }
+
     IEnumerator ConfirmAndPromote(PlayerData myData)
     {
         isCheckingPromotion = true;
-        yield return new WaitForSeconds(1.5f); // 잠깐 기다리며 네트워크 동기화 시간을 줌
+        yield return new WaitForSeconds(1.5f);
 
-        // 기다린 후 다시 확인: 그 사이에 진짜 방장이 나타났으면 승격 취소
         var players = FindObjectsOfType<PlayerData>()
             .Where(p => p != null && p.Object != null && p.Object.IsValid)
             .ToList();
@@ -155,7 +165,6 @@ public class WaitingRoomManager : MonoBehaviour
 
     public void OnGameStarted()
     {
-        Debug.Log($"[진단] OnGameStarted 호출됨. IsHost={GameData.IsHost}");
         if (hasGameStarted) return;
         hasGameStarted = true;
 
@@ -164,9 +173,7 @@ public class WaitingRoomManager : MonoBehaviour
 
         if (GameData.IsHost)
         {
-            Debug.Log("[진단] 호스트 분기 진입 - 주사위 스폰 시도");
             var runner = FindObjectOfType<NetworkRunner>();
-            Debug.Log($"[진단] runner={(runner == null ? "null" : "정상")}");
 
             var existing = FindObjectOfType<GameStateManager>();
             if (existing == null)
@@ -184,10 +191,8 @@ public class WaitingRoomManager : MonoBehaviour
                     dc.diceIndex = -1;
                 }
             );
-            Debug.Log($"[진단] diceObj={(diceObj == null ? "null" : "생성됨")}");
 
             var diceController = diceObj.GetComponent<DiceController3D>();
-            Debug.Log($"[진단] diceController={(diceController == null ? "null" : "정상")}");
 
             if (DiceGroupController3D.Instance != null)
             {
@@ -207,8 +212,6 @@ public class WaitingRoomManager : MonoBehaviour
 
         mainMenuCanvas.SetActive(true);
         gameObject.SetActive(false);
-
-        Debug.Log("방을 나갔습니다.");
     }
 
     PlayerData FindMyPlayerData()

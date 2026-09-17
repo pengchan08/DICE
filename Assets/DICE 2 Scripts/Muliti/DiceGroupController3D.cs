@@ -17,6 +17,8 @@ public class DiceGroupController3D : MonoBehaviour
     [Header("게임플레이 주사위 프리팹")]
     public NetworkPrefabRef gameplayDicePrefab;
 
+    [Header("선공 결정용 주사위 프리팹 (다시하기 재스폰용)")]
+    public NetworkPrefabRef firstTurnDicePrefab;
     private int pendingCount = 0;
     private DiceController3D firstTurnDiceController;
     public DiceController3D FirstTurnDice => firstTurnDiceController;
@@ -156,6 +158,51 @@ public class DiceGroupController3D : MonoBehaviour
     public void RegisterFirstTurnDice(DiceController3D controller)
     {
         firstTurnDiceController = controller;
+    }
+
+    public void ResetForRematch()
+    {
+        var runner = FindObjectOfType<NetworkRunner>();
+        if (runner == null) return;
+
+        for (int i = 0; i < diceControllers.Length; i++)
+        {
+            var dc = diceControllers[i];
+            if (dc != null && dc.Object != null && dc.Object.IsValid)
+            {
+                if (GameData.IsHost)
+                {
+                    runner.Despawn(dc.Object);
+                }
+            }
+            diceControllers[i] = null;
+        }
+
+        if (firstTurnDiceController != null && firstTurnDiceController.Object != null && firstTurnDiceController.Object.IsValid)
+        {
+            if (GameData.IsHost)
+            {
+                runner.Despawn(firstTurnDiceController.Object);
+            }
+            firstTurnDiceController = null;
+        }
+
+        if (GameData.IsHost)
+        {
+            var diceObj = runner.Spawn(
+                firstTurnDicePrefab,
+                new Vector3(0, 2, 0),
+                Quaternion.identity,
+                onBeforeSpawned: (r, obj) =>
+                {
+                    var dc = obj.GetComponent<DiceController3D>();
+                    dc.diceIndex = -1;
+                }
+            );
+
+            var diceController = diceObj.GetComponent<DiceController3D>();
+            RegisterFirstTurnDice(diceController);
+        }
     }
 
     PlayerData FindMyPlayerData()

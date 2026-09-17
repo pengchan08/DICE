@@ -20,11 +20,13 @@ public class GameStateManager : NetworkBehaviour
     [Networked, OnChangedRender(nameof(OnGameEndedChanged))]
     public NetworkBool GameEnded { get; set; }
 
-    // 능력 카드 선택 단계
     [Networked, OnChangedRender(nameof(OnCardSelectionPendingChanged))]
     public NetworkBool CardSelectionPending { get; set; }
     [Networked] public int CardOptionA { get; set; }
     [Networked] public int CardOptionB { get; set; }
+
+    [Header("다시하기용 주사위 프리팹 (재시작 시 사용)")]
+    public NetworkPrefabRef firstTurnDicePrefabForRematch;
 
     private const float TieRevealSeconds = 1.5f;
 
@@ -41,6 +43,10 @@ public class GameStateManager : NetworkBehaviour
         if (!GameEnded)
         {
             CheckGameEnd();
+        }
+        else
+        {
+            CheckRematch();
         }
     }
 
@@ -99,7 +105,6 @@ public class GameStateManager : NetworkBehaviour
         CurrentTurnPlayer = winner.Object.InputAuthority;
         FirstTurnDecided = true;
 
-        // 능력 카드 2장을 랜덤으로 뽑아 선공에게 선택권 부여 (서로 다른 종류로)
         int optionA = Random.Range(0, 4);
         int optionB;
         do { optionB = Random.Range(0, 4); } while (optionB == optionA);
@@ -119,6 +124,18 @@ public class GameStateManager : NetworkBehaviour
         }
     }
 
+    void CheckRematch()
+    {
+        var players = FindObjectsOfType<PlayerData>()
+            .Where(p => p != null && p.Object != null && p.Object.IsValid)
+            .ToList();
+
+        if (players.Count < 2) return;
+        if (!players.All(p => p.WantsRematch)) return;
+
+        RPC_StartRematch();
+    }
+
     void OnGameEndedChanged()
     {
         if (!GameEnded) return;
@@ -132,13 +149,11 @@ public class GameStateManager : NetworkBehaviour
 
         var firstTurnUI = FindObjectOfType<FirstTurnUIManager>(true);
         if (firstTurnUI != null) firstTurnUI.HideTexts();
-
-        // 주사위 스폰은 카드 선택이 끝난 뒤(OnCardSelectionPendingChanged)에 진행
     }
 
     void OnCardSelectionPendingChanged()
     {
-        if (CardSelectionPending) return; // 선택 시작 시점엔 할 일 없음 (UI가 알아서 표시)
+        if (CardSelectionPending) return;
         if (!FirstTurnDecided) return;
 
         if (DiceGroupController3D.Instance != null)
@@ -151,15 +166,6 @@ public class GameStateManager : NetworkBehaviour
     {
         var uiManager = FindObjectOfType<GameUIManager>();
         if (uiManager != null) uiManager.RefreshTurnUI();
-
-        var myData = FindObjectsOfType<PlayerData>()
-            .Where(p => p != null && p.Object != null && p.Object.IsValid)
-            .FirstOrDefault(p => p.Object.HasStateAuthority);
-
-        if (myData != null && myData.Object.InputAuthority == CurrentTurnPlayer)
-        {
-            myData.ResetBoardForNewTurn();
-        }
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
@@ -200,12 +206,11 @@ public class GameStateManager : NetworkBehaviour
         }
     }
 
-    // 선공 플레이어가 카드를 선택했을 때 클라이언트가 호출 (호스트에서 검증 후 배정)
     [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
     public void RPC_RequestSelectCard(PlayerRef requester, int chosenCardType)
     {
         if (!CardSelectionPending) return;
-        if (requester != CurrentTurnPlayer) return; // 선공만 선택 가능
+        if (requester != CurrentTurnPlayer) return;
         if (chosenCardType != CardOptionA && chosenCardType != CardOptionB) return;
 
         int otherCardType = (chosenCardType == CardOptionA) ? CardOptionB : CardOptionA;
@@ -221,7 +226,6 @@ public class GameStateManager : NetworkBehaviour
         CardSelectionPending = false;
     }
 
-    // 각자 자기 자신의 PlayerData에만 실제로 카드를 배정 (StateAuthority 규칙 준수)
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     void RPC_AssignAbilityCards(PlayerRef winnerPlayer, int winnerCardType, PlayerRef otherPlayer, int otherCardType)
     {
@@ -238,6 +242,44 @@ public class GameStateManager : NetworkBehaviour
         else if (myData.Object.InputAuthority == otherPlayer)
         {
             myData.AssignCard(otherCardType);
+        }
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    void RPC_StartRematch()
+    {
+        // 각 클라이언트가 자기 자신의 데이터만 리셋
+        var myData = FindObjectsOfType<PlayerData>()
+            .Where(p => p != null && p.Object != null && p.Object.IsValid)
+            .FirstOrDefault(p => p.Object.HasStateAuthority);
+
+        if (myData != null)
+        {
+            myData.ResetForRematch();
+        }
+
+        // 화면 전환은 모든 클라이언트에서 로컬로 수행
+        var resultUI = FindObjectOfType<ResultUIManager>(true);
+        if (resultUI != null) resultUI.HideResultShowGame();
+
+        var firstTurnUI = FindObjectOfType<FirstTurnUIManager>(true);
+        if (firstTurnUI != null) firstTurnUI.ShowTexts();
+
+        // 게임 상태 및 주사위 재생성은 호스트만 실제로 반영
+        if (Object.HasStateAuthority)
+        {
+            GameEnded = false;
+            FirstTurnDecided = false;
+            RerollInProgress = false;
+            WaitingForGuestRoll = false;
+            LastComparedHostVersion = 0;
+            LastComparedGuestVersion = 0;
+            CardSelectionPending = false;
+
+            if (DiceGroupController3D.Instance != null)
+            {
+                DiceGroupController3D.Instance.ResetForRematch();
+            }
         }
     }
 }

@@ -25,6 +25,8 @@ public class PlayerData : NetworkBehaviour
 
     [Networked] public NetworkString<_64> ActionLog { get; set; } // 마지막 행동 메시지 (조합 선택 / 카드 사용)
 
+    [Networked] public NetworkBool WantsRematch { get; set; }
+
     public const int MaxRollsPerTurn = 3;
     private const int ScoreBonusAmount = 15;
     private bool hasLoggedOnce = false;
@@ -443,4 +445,58 @@ public class PlayerData : NetworkBehaviour
         }
         return true;
     }
+
+    public void RequestRematch()
+    {
+        if (!Object.HasStateAuthority) return;
+        WantsRematch = true;
+    }
+
+    public void ResetForRematch()
+    {
+        if (!Object.HasStateAuthority) return;
+
+        StartRoll = 0;
+        StartRollVersion = 0;
+
+        for (int i = 0; i < 5; i++)
+        {
+            DiceSlots.Set(i, 0);
+            HeldDice.Set(i, false);
+        }
+        RollCount = 0;
+        TotalScore = 0;
+
+        for (int i = 0; i < 12; i++)
+        {
+            UsedCombos.Set(i, false);
+        }
+
+        HeldCardType = -1;
+        HasUsedCardThisTurn = false;
+        BonusRolls = 0;
+        PendingScoreBonus = 0;
+        PendingCardAction = -1;
+        PendingCardTargetSlot = -1;
+        ActionLog = "";
+        WantsRematch = false;
+    }
+
+#if UNITY_EDITOR
+public void DebugFillDiceForTest()
+{
+    if (!Object.HasStateAuthority) return;
+    var gameState = FindObjectOfType<GameStateManager>();
+    if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return;
+
+    for (int i = 0; i < 5; i++)
+    {
+        if (!HeldDice[i])
+        {
+            DiceSlots.Set(i, Random.Range(1, 7));
+        }
+    }
+    RollCount = GetMaxRollsThisTurn();
+}
+#endif
 }

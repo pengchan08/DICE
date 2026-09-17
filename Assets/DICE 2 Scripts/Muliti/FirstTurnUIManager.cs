@@ -39,4 +39,11 @@ public class FirstTurnUIManager : MonoBehaviour
         if (player2RollText != null) player2RollText.gameObject.SetActive(false);
         if (resultText != null) resultText.gameObject.SetActive(false);
     }
+
+    public void ShowTexts()
+    {
+        if (player1RollText != null) player1RollText.gameObject.SetActive(true);
+        if (player2RollText != null) player2RollText.gameObject.SetActive(true);
+        if (resultText != null) resultText.gameObject.SetActive(true);
+    }
 }
