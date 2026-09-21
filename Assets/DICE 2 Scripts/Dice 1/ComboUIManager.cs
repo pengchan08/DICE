@@ -22,7 +22,8 @@ public class ComboUIManager : MonoBehaviour
 
         bool isDiceRolling = DiceGroupController3D.Instance != null && DiceGroupController3D.Instance.IsAnyDiceRolling;
 
-        bool canSelectCombo = isMyTurn && !isDiceRolling && myData.RollCount > 0;
+        bool canSelectCombo = isMyTurn && !isDiceRolling && myData.RollCount > 0
+                              && myData.PendingCardAction == -1;
 
         foreach (var button in comboButtons)
         {

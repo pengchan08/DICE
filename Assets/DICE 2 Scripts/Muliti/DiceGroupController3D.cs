@@ -162,6 +162,7 @@ public class DiceGroupController3D : MonoBehaviour
 
     public void ResetForRematch()
     {
+        pendingCount = 0;
         var runner = FindObjectOfType<NetworkRunner>();
         if (runner == null) return;
 

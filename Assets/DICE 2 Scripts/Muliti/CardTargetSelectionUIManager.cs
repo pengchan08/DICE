@@ -45,7 +45,12 @@ public class CardTargetSelectionUIManager : MonoBehaviour
         }
 
         if (valuePickerPanel != null) valuePickerPanel.SetActive(pickingValue);
-        if (cancelButton != null) cancelButton.gameObject.SetActive(selectingSlot || pickingValue);
+        if (cancelButton != null)
+        {
+            bool showCancel = selectingSlot || pickingValue;
+            cancelButton.gameObject.SetActive(showCancel);
+            if (showCancel) cancelButton.interactable = true;
+        }
     }
 
     void OnValueChosen(int value)
@@ -57,6 +62,7 @@ public class CardTargetSelectionUIManager : MonoBehaviour
 
     void OnCancelClicked()
     {
+        Debug.Log("[진단] 취소 클릭");
         var myData = FindMyPlayerData();
         if (myData == null) return;
         myData.CancelCardAction();

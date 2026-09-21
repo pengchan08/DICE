@@ -58,7 +58,10 @@ public class GameplayDiceUIManager : MonoBehaviour
             diceSlotButtons[i].interactable = canToggle;
         }
 
-        bool canRoll = isMyTurn && !isDiceRolling && myData.RollCount < maxRollsThisTurn;
+        bool canRoll = isMyTurn && !isDiceRolling
+                       && myData.RollCount < maxRollsThisTurn
+                       && myData.PendingCardAction == -1;
+
         rollButton.interactable = canRoll;
 
         rollCountText.text = $"남은 굴리기 : {maxRollsThisTurn - myData.RollCount}회";

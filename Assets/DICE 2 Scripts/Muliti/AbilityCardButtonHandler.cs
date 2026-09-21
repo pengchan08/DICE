@@ -45,7 +45,8 @@ public class AbilityCardButtonHandler : MonoBehaviour
         }
 
         if (buttonText != null) buttonText.text = GetCardName(myData.HeldCardType);
-        button.interactable = myData.CanUseAbilityCard();
+        bool isDiceRolling = DiceGroupController3D.Instance != null && DiceGroupController3D.Instance.IsAnyDiceRolling;
+        button.interactable = myData.CanUseAbilityCard() && !isDiceRolling;
     }
 
     string GetCardName(int cardType)

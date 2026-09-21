@@ -163,6 +163,7 @@ public class PlayerData : NetworkBehaviour
         if (HeldCardType == -1) return false;
         if (HasUsedCardThisTurn) return false;
         if (PendingCardAction != -1) return false;
+        if (RollCount == 0) return false;
         return true;
     }
 
@@ -400,6 +401,7 @@ public class PlayerData : NetworkBehaviour
     {
         if (!Object.HasStateAuthority) return;
         if (UsedCombos[comboIndex]) return;
+        if (PendingCardAction != -1) return;
 
         var gameState = FindObjectOfType<GameStateManager>();
         if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return;
@@ -430,6 +432,8 @@ public class PlayerData : NetworkBehaviour
         RollCount = 0;
         BonusRolls = 0;
         HasUsedCardThisTurn = false;
+        PendingCardAction = -1;
+        PendingCardTargetSlot = -1;
 
         if (gameState != null)
         {
