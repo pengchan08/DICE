@@ -29,6 +29,8 @@ public class ResultUIManager : MonoBehaviour
 
     public Button leaveButton;
 
+    private bool isLeaving = false;
+
     void Start()
     {
         leaveButton.onClick.AddListener(OnLeaveClicked);
@@ -109,6 +111,15 @@ public class ResultUIManager : MonoBehaviour
 
     async void OnLeaveClicked()
     {
+        if (isLeaving) return;
+        isLeaving = true;
+        leaveButton.interactable = false;
+
+        var myData = FindObjectsOfType<PlayerData>()
+            .Where(p => p != null && p.Object != null && p.Object.IsValid)
+            .FirstOrDefault(p => p.Object.HasStateAuthority);
+        if (myData != null) myData.CancelRematchRequest();
+
         var roomManager = FindObjectOfType<RoomManager>();
         if (roomManager != null)
         {
@@ -118,5 +129,6 @@ public class ResultUIManager : MonoBehaviour
 
         resultCanvas.SetActive(false);
         mainMenuCanvas.SetActive(true);
+        isLeaving = false;
     }
 }

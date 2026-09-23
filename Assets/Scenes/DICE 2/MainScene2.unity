@@ -442,7 +442,7 @@ RectTransform:
   m_Children:
   - {fileID: 1681880617}
   m_Father: {fileID: 1023521858}
-  m_RootOrder: 6
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -9317,8 +9317,8 @@ RectTransform:
   - {fileID: 578527994}
   - {fileID: 1288712587}
   - {fileID: 94548550}
-  - {fileID: 1854874265}
   - {fileID: 41215460}
+  - {fileID: 1854874265}
   m_Father: {fileID: 2097402718}
   m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -17253,7 +17253,6 @@ GameObject:
   - component: {fileID: 1854874269}
   - component: {fileID: 1854874268}
   - component: {fileID: 1854874267}
-  - component: {fileID: 1854874266}
   m_Layer: 5
   m_Name: Cancel Button
   m_TagString: Untagged
@@ -17275,25 +17274,13 @@ RectTransform:
   m_Children:
   - {fileID: 975544033}
   m_Father: {fileID: 1023521858}
-  m_RootOrder: 5
+  m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: -402.08, y: -490}
   m_SizeDelta: {x: 192.68, y: 275.42}
   m_Pivot: {x: 0, y: 0}
---- !u!114 &1854874266
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1854874264}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2dc9df401e7559c4dab6a3713efd13e8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1854874267
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -486,6 +486,12 @@ public class PlayerData : NetworkBehaviour
         WantsRematch = false;
     }
 
+    public void CancelRematchRequest()
+    {
+        if (!Object.HasStateAuthority) return;
+        WantsRematch = false;
+    }
+
 #if UNITY_EDITOR
 public void DebugFillDiceForTest()
 {
