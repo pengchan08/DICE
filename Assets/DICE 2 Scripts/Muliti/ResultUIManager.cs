@@ -60,6 +60,9 @@ public class ResultUIManager : MonoBehaviour
 
     public void ShowResult()
     {
+        isLeaving = false;
+        leaveButton.interactable = true;
+
         var players = FindObjectsOfType<PlayerData>()
             .Where(p => p != null && p.Object != null && p.Object.IsValid)
             .ToList();
@@ -130,5 +133,12 @@ public class ResultUIManager : MonoBehaviour
         resultCanvas.SetActive(false);
         mainMenuCanvas.SetActive(true);
         isLeaving = false;
+        leaveButton.interactable = true;
+
+        var firstTurnUI = FindObjectOfType<FirstTurnUIManager>(true);
+        if (firstTurnUI != null) firstTurnUI.ShowTexts();
+
+        if (DiceGroupController3D.Instance != null)
+            DiceGroupController3D.Instance.ClearLocalState();
     }
 }

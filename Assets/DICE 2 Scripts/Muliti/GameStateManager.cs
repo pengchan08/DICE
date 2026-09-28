@@ -30,6 +30,13 @@ public class GameStateManager : NetworkBehaviour
 
     private const float TieRevealSeconds = 1.5f;
 
+    public static GameStateManager Find()
+    {
+        var gs = FindObjectOfType<GameStateManager>();
+        if (gs == null || gs.Object == null || !gs.Object.IsValid) return null;
+        return gs;
+    }
+
     public override void FixedUpdateNetwork()
     {
         if (!Object.HasStateAuthority) return;

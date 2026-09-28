@@ -44,8 +44,11 @@ public class WaitingRoomManager : MonoBehaviour
     private bool isCheckingPromotion = false;
     private bool hasGameStarted = false;
 
-    void Start()
+    void OnEnable()
     {
+        hasGameStarted = false;
+        isCheckingPromotion = false;
+
         _runner = FindObjectOfType<NetworkRunner>();
 
         string roomName = "-";
@@ -56,7 +59,10 @@ public class WaitingRoomManager : MonoBehaviour
 
         roomNameText.text = "방 이름: " + roomName;
         roomCodeText.text = "방 코드: " + GameData.RoomCode;
+    }
 
+    void Start()
+    {
         readyButton.onClick.AddListener(OnReadyClicked);
         startGameButton.onClick.AddListener(OnStartGameClicked);
         leaveRoomButton.onClick.AddListener(OnLeaveRoomClicked);

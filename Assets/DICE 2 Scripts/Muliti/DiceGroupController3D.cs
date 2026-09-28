@@ -212,4 +212,11 @@ public class DiceGroupController3D : MonoBehaviour
             .Where(p => p != null && p.Object != null && p.Object.IsValid)
             .FirstOrDefault(p => p.Object.HasStateAuthority);
     }
+
+    public void ClearLocalState()
+    {
+        pendingCount = 0;
+        firstTurnDiceController = null;
+        for (int i = 0; i < diceControllers.Length; i++) diceControllers[i] = null;
+    }
 }

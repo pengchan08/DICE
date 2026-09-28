@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Threading.Tasks;
 
 public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
 {
@@ -186,7 +187,34 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
         errorMessageCoroutine = null;
     }
 
-    public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) { }
+    public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
+    {
+        if (player == runner.LocalPlayer) return;
+        HandleOpponentLeft();
+    }
+
+    async void HandleOpponentLeft()
+    {
+        ShowErrorMessage("상대가 나갔습니다.");
+        await LeaveRoom();
+        ResetMenuButtons();
+
+        var game = FindObjectOfType<ResultUIManager>(true);
+        if (game != null)
+        {
+            game.gameCanvas.SetActive(false);
+            game.resultCanvas.SetActive(false);
+        }
+        waitingRoomCanvas.SetActive(false);
+        mainMenuCanvas.SetActive(true);
+
+        var firstTurnUI = FindObjectOfType<FirstTurnUIManager>(true);
+        if (firstTurnUI != null) firstTurnUI.ShowTexts();
+
+        if (DiceGroupController3D.Instance != null)
+            DiceGroupController3D.Instance.ClearLocalState();
+    }
+
     public void OnInput(NetworkRunner runner, NetworkInput input) { }
     public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }
     public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { }
