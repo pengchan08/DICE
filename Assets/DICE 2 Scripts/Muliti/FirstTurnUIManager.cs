@@ -16,6 +16,7 @@ public class FirstTurnUIManager : MonoBehaviour
         {
             var players = FindObjectsOfType<PlayerData>()
                 .Where(p => p != null && p.Object != null && p.Object.IsValid)
+                .OrderByDescending(p => (bool)p.IsHost)
                 .ToList();
             if (players.Count < 2) return;
 

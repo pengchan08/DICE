@@ -33,7 +33,11 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
     [Header("에러 메시지")]
     public Text errorMessageText;
 
+    [Header("상대 이탈 알림 (메인 메뉴 캔버스 바로 아래)")]
+    public Text opponentLeftText;
+
     private Coroutine errorMessageCoroutine;
+    private bool isHandlingLeft = false;
 
     void Start()
     {
@@ -85,7 +89,7 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
 
     string GenerateRoomCode()
     {
-        return Random.Range(1000, 9999).ToString();
+        return Random.Range(1000, 10000).ToString();
     }
 
     async System.Threading.Tasks.Task ConnectToRoom(string roomCode)
@@ -113,6 +117,18 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
 
         if (result.Ok)
         {
+            if (GameData.IsHost && _runner.SessionInfo.PlayerCount > 1)
+            {
+                await _runner.Shutdown(destroyGameObject: false);
+                Destroy(_runner);
+                _runner = null;
+                string newCode = GenerateRoomCode();
+                GameData.RoomCode = newCode;
+                generatedRoomCodeText.text = "방 코드: " + newCode;
+                await ConnectToRoom(newCode);
+                return;
+            }
+
             // 참가자인 경우, 방이 실제로 존재했었는지 확인
             if (!GameData.IsHost)
             {
@@ -190,12 +206,19 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
     {
         if (player == runner.LocalPlayer) return;
+        if (isHandlingLeft) return;
+
+        var game = FindObjectOfType<ResultUIManager>(true);
+        bool inGame = game != null && (game.gameCanvas.activeSelf || game.resultCanvas.activeSelf);
+        if (!inGame) return;
+
         HandleOpponentLeft();
     }
 
     async void HandleOpponentLeft()
     {
-        ShowErrorMessage("상대가 나갔습니다.");
+        isHandlingLeft = true;
+
         await LeaveRoom();
         ResetMenuButtons();
 
@@ -208,11 +231,22 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
         waitingRoomCanvas.SetActive(false);
         mainMenuCanvas.SetActive(true);
 
+        if (opponentLeftText != null) StartCoroutine(ShowOpponentLeftNotice());
+
         var firstTurnUI = FindObjectOfType<FirstTurnUIManager>(true);
         if (firstTurnUI != null) firstTurnUI.ShowTexts();
 
         if (DiceGroupController3D.Instance != null)
             DiceGroupController3D.Instance.ClearLocalState();
+
+        isHandlingLeft = false;
+    }
+
+    IEnumerator ShowOpponentLeftNotice()
+    {
+        opponentLeftText.text = "상대가 나갔습니다.";
+        yield return new WaitForSeconds(2f);
+        opponentLeftText.text = "";
     }
 
     public void OnInput(NetworkRunner runner, NetworkInput input) { }

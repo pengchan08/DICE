@@ -160,6 +160,7 @@ public class PlayerData : NetworkBehaviour
         if (!Object.HasStateAuthority) return false;
         var gameState = FindObjectOfType<GameStateManager>();
         if (gameState == null || gameState.CurrentTurnPlayer != Object.InputAuthority) return false;
+        if (DiceGroupController3D.Instance != null && DiceGroupController3D.Instance.IsAnyDiceRolling) return false;
         if (HeldCardType == -1) return false;
         if (HasUsedCardThisTurn) return false;
         if (PendingCardAction != -1) return false;

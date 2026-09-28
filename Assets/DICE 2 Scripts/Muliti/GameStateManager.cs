@@ -122,7 +122,9 @@ public class GameStateManager : NetworkBehaviour
 
     void CheckGameEnd()
     {
-        var players = FindObjectsOfType<PlayerData>();
+        var players = FindObjectsOfType<PlayerData>()
+            .Where(p => p != null && p.Object != null && p.Object.IsValid)
+            .ToArray();
         if (players.Length < 2) return;
 
         if (players[0].AreAllCombosUsed() && players[1].AreAllCombosUsed())

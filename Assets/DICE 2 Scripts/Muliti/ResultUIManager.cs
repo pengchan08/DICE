@@ -43,6 +43,7 @@ public class ResultUIManager : MonoBehaviour
 
         var players = FindObjectsOfType<PlayerData>()
             .Where(p => p != null && p.Object != null && p.Object.IsValid)
+            .OrderByDescending(p => (bool)p.IsHost)
             .ToList();
 
         int readyCount = players.Count(p => p.WantsRematch);

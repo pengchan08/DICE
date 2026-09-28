@@ -171,20 +171,15 @@ public class DiceGroupController3D : MonoBehaviour
             var dc = diceControllers[i];
             if (dc != null && dc.Object != null && dc.Object.IsValid)
             {
-                if (GameData.IsHost)
-                {
-                    runner.Despawn(dc.Object);
-                }
+                if (dc.Object.HasStateAuthority) runner.Despawn(dc.Object);
             }
             diceControllers[i] = null;
         }
 
         if (firstTurnDiceController != null && firstTurnDiceController.Object != null && firstTurnDiceController.Object.IsValid)
         {
-            if (GameData.IsHost)
-            {
-                runner.Despawn(firstTurnDiceController.Object);
-            }
+            if (firstTurnDiceController.Object.HasStateAuthority) runner.Despawn(firstTurnDiceController.Object);
+
             firstTurnDiceController = null;
         }
 

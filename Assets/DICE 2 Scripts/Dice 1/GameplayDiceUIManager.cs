@@ -70,6 +70,7 @@ public class GameplayDiceUIManager : MonoBehaviour
     void OnSlotClicked(int index)
     {
         var myData = FindMyPlayerData();
+        if (myData.PendingCardAction == 2) return;
         if (myData == null) return;
 
         if (myData.PendingCardAction == 1 || myData.PendingCardAction == 3)
