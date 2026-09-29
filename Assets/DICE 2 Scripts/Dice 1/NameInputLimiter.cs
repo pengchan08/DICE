@@ -21,10 +21,12 @@ public class NameInputLimiter : MonoBehaviour
     {
         bool isEnglish = (addedChar >= 'a' && addedChar <= 'z') || (addedChar >= 'A' && addedChar <= 'Z');
         bool isKorean = IsKoreanChar(addedChar);
+        bool isDigit = addedChar >= '0' && addedChar <= '9';
+        bool isSpace = addedChar == ' ';
 
-        if (!isEnglish && !isKorean)
+        if (!isEnglish && !isKorean && !isDigit && !isSpace)
         {
-            return '\0'; // 한글/영어가 아니면 입력 거부 (숫자, 특수문자, 다른 언어 등)
+            return '\0';
         }
 
         return addedChar;
