@@ -2,6 +2,7 @@ using Fusion;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Linq;
+using System.Collections;
 
 public class ResultUIManager : MonoBehaviour
 {
@@ -10,6 +11,13 @@ public class ResultUIManager : MonoBehaviour
     public GameObject mainMenuCanvas;
 
     public Text winnerText;
+
+    [Header("결과 화면 연출")]
+    public CanvasGroup resultGroup;
+    public float resultFadeInTime = 0.4f;
+
+    [Header("승자 강조")]
+    public float winnerScale = 1.2f;
 
     [Header("플레이어 1")]
     public Text player1NameText;
@@ -66,6 +74,7 @@ public class ResultUIManager : MonoBehaviour
 
         var players = FindObjectsOfType<PlayerData>()
             .Where(p => p != null && p.Object != null && p.Object.IsValid)
+            .OrderByDescending(p => (bool)p.IsHost)
             .ToList();
 
         if (players.Count < 2) return;
@@ -81,24 +90,53 @@ public class ResultUIManager : MonoBehaviour
         player2NameText.color = p2.Object.HasStateAuthority ? myNameColor : opponentNameColor;
         player2ScoreText.text = $"{p2.TotalScore}점";
 
+        player1NameText.transform.localScale = Vector3.one;
+        player2NameText.transform.localScale = Vector3.one;
+
         if (p1.TotalScore == p2.TotalScore)
         {
             winnerText.text = "무승부";
         }
         else
         {
-            var winner = p1.TotalScore > p2.TotalScore ? p1 : p2;
+            bool p1Wins = p1.TotalScore > p2.TotalScore;
+            var winner = p1Wins ? p1 : p2;
             winnerText.text = $"{winner.PlayerName} 승리!";
+
+            var winnerText1 = p1Wins ? player1NameText.transform : player2NameText.transform;
+            winnerText1.localScale = Vector3.one * winnerScale;
         }
 
         gameCanvas.SetActive(false);
         resultCanvas.SetActive(true);
+
+        if (BGMManager.Instance != null) BGMManager.Instance.Play(BGMManager.Instance.resultBGM);
+
+        if (resultGroup != null)
+        {
+            StopAllCoroutines();
+            StartCoroutine(FadeInResult());
+        }
+    }
+
+    IEnumerator FadeInResult()
+    {
+        resultGroup.alpha = 0f;
+        float t = 0f;
+        while (t < resultFadeInTime)
+        {
+            t += Time.deltaTime;
+            resultGroup.alpha = t / resultFadeInTime;
+            yield return null;
+        }
+        resultGroup.alpha = 1f;
     }
 
     public void HideResultShowGame()
     {
         resultCanvas.SetActive(false);
         gameCanvas.SetActive(true);
+        if (BGMManager.Instance != null) BGMManager.Instance.Play(BGMManager.Instance.gameBGM);
     }
 
     void OnRematchClicked()

@@ -19,7 +19,7 @@ public class TurnBannerUIManager : MonoBehaviour
     {
         bannerText.text = isMyTurn ? "내 턴" : $"{playerName}의 턴";
 
-        bannerGroup.gameObject.SetActive(true);
+        gameObject.SetActive(true);
 
         if (current != null) StopCoroutine(current);
         current = StartCoroutine(PlayBanner());

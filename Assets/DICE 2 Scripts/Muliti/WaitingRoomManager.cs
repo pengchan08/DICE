@@ -176,6 +176,8 @@ public class WaitingRoomManager : MonoBehaviour
         gameObject.SetActive(false);
         gameCanvas.SetActive(true);
 
+        if (BGMManager.Instance != null) BGMManager.Instance.Play(BGMManager.Instance.gameBGM);
+
         if (GameData.IsHost)
         {
             var runner = FindObjectOfType<NetworkRunner>();

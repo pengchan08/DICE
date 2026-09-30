@@ -148,6 +148,7 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
 
             mainMenuCanvas.SetActive(false);
             waitingRoomCanvas.SetActive(true);
+            if (BGMManager.Instance != null) BGMManager.Instance.Play(BGMManager.Instance.waitingRoomBGM);
         }
         else
         {
