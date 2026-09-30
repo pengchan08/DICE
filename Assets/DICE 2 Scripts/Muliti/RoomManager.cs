@@ -36,6 +36,9 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
     [Header("상대 이탈 알림 (메인 메뉴 캔버스 바로 아래)")]
     public Text opponentLeftText;
 
+    [Header("나가기 버튼")]
+    public Button quitButton;
+
     private Coroutine errorMessageCoroutine;
     private bool isHandlingLeft = false;
 
@@ -43,6 +46,11 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
     {
         createButton.onClick.AddListener(OnCreateRoom);
         joinButton.onClick.AddListener(OnJoinRoom);
+
+        if (quitButton != null) quitButton.onClick.AddListener(OnQuitClicked);
+
+        if (BGMManager.Instance != null)
+            BGMManager.Instance.Play(BGMManager.Instance.mainMenuBGM);
     }
 
     async void OnCreateRoom()
@@ -76,6 +84,14 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
         GameData.IsHost = false;
 
         await ConnectToRoom(roomCode);
+    }
+
+    public void OnQuitClicked()
+    {
+        Application.Quit();
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#endif
     }
 
     void SetAllInteractable(bool value)
