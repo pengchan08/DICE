@@ -514,6 +514,7 @@ MonoBehaviour:
   - RawGuidValue: 7b95350977fbb0447b1abdaee72f2079
   - RawGuidValue: c7e244358822621469cefdbfe8394577
   - RawGuidValue: 13b91e0446f63ee49a678d9076df459b
+  diceLandClip: {fileID: 8300000, guid: 28ebbb7e5838441439f7cc9d4bd78614, type: 3}
 --- !u!114 &3566896820193827053
 MonoBehaviour:
   m_ObjectHideFlags: 0

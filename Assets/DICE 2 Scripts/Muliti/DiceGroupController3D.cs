@@ -20,8 +20,10 @@ public class DiceGroupController3D : MonoBehaviour
     [Header("선공 결정용 주사위 프리팹 (다시하기 재스폰용)")]
     public NetworkPrefabRef firstTurnDicePrefab;
     private int pendingCount = 0;
+
     private DiceController3D firstTurnDiceController;
     public DiceController3D FirstTurnDice => firstTurnDiceController;
+
     public bool IsAnyDiceRolling
     {
         get

@@ -146,15 +146,12 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
                 }
             }
 
-            Debug.Log($"[디버그] 연결된 세션 이름: {_runner.SessionInfo.Name}, 현재 세션 인원: {_runner.SessionInfo.PlayerCount}");
-            Debug.Log($"연결 성공! 방 코드: {roomCode}, 이름: {GameData.PlayerName}, 방장 여부: {GameData.IsHost}");
             mainMenuCanvas.SetActive(false);
             waitingRoomCanvas.SetActive(true);
         }
         else
         {
             ShowErrorMessage("연결에 실패했습니다. 다시 시도해주세요.");
-            Debug.LogError("연결 실패: " + result.ShutdownReason);
             ResetMenuButtons();
         }
     }
@@ -171,8 +168,6 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
-        Debug.Log("플레이어 입장: " + player);
-
         if (player == runner.LocalPlayer)
         {
             runner.Spawn(playerDataPrefab, Vector3.zero, Quaternion.identity, player);

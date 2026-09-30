@@ -143,7 +143,6 @@ public class WaitingRoomManager : MonoBehaviour
         {
             myData.PromoteToHost();
             GameData.IsHost = true;
-            Debug.Log("방장이 없어서 자동 승격되었습니다.");
         }
 
         isCheckingPromotion = false;

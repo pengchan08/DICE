@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 using System.Linq;
 
 public class GameplayDiceUIManager : MonoBehaviour
@@ -20,6 +21,7 @@ public class GameplayDiceUIManager : MonoBehaviour
     public Button rollButton;
     public Text rollCountText;
 
+    private int[] lastDiceValues = new int[5] { -1, -1, -1, -1, -1 };
     void Start()
     {
         for (int i = 0; i < 5; i++)
@@ -52,6 +54,10 @@ public class GameplayDiceUIManager : MonoBehaviour
             bool isHeld = myData.HeldDice[i];
 
             diceValueTexts[i].text = value == 0 ? "-" : value.ToString();
+
+            if (value != lastDiceValues[i] && value != 0) StartCoroutine(PunchScale(diceValueTexts[i].transform));
+            lastDiceValues[i] = value;
+
             slotBackgrounds[i].color = isHeld ? heldColor : normalColor;
 
             bool canToggle = isMyTurn && !isDiceRolling && value != 0;
@@ -65,6 +71,21 @@ public class GameplayDiceUIManager : MonoBehaviour
         rollButton.interactable = canRoll;
 
         rollCountText.text = $"남은 굴리기 : {maxRollsThisTurn - myData.RollCount}회";
+    }
+
+    IEnumerator PunchScale(Transform t)
+    {
+        Vector3 original = Vector3.one;
+        t.localScale = original * 1.4f;
+        float duration = 0.15f;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            t.localScale = Vector3.Lerp(original * 1.4f, original, elapsed / duration);
+            yield return null;
+        }
+        t.localScale = original;
     }
 
     void OnSlotClicked(int index)

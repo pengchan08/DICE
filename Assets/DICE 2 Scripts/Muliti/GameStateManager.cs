@@ -175,6 +175,19 @@ public class GameStateManager : NetworkBehaviour
     {
         var uiManager = FindObjectOfType<GameUIManager>();
         if (uiManager != null) uiManager.RefreshTurnUI();
+
+        var banner = FindObjectOfType<TurnBannerUIManager>(true);
+        if (banner != null)
+        {
+            var currentPlayerData = FindObjectsOfType<PlayerData>()
+                .FirstOrDefault(p => p != null && p.Object != null && p.Object.IsValid
+                                  && p.Object.InputAuthority == CurrentTurnPlayer);
+            if (currentPlayerData != null)
+            {
+                bool isMine = CurrentTurnPlayer == Runner.LocalPlayer;
+                banner.ShowTurnBanner(currentPlayerData.PlayerName.ToString(), isMine);
+            }
+        }
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]

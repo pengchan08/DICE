@@ -5,10 +5,13 @@ public class ComboUIManager : MonoBehaviour
 {
     private ComboButtonHandler[] comboButtons;
 
-    void Update()
+    void Start()
     {
         comboButtons = FindObjectsOfType<ComboButtonHandler>();
+    }
 
+    void Update()
+    {
         var myData = FindObjectsOfType<PlayerData>()
             .Where(p => p != null && p.Object != null && p.Object.IsValid)
             .FirstOrDefault(p => p.Object.HasStateAuthority);
