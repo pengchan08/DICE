@@ -4,4 +4,6 @@ public static class GameData
     public static string RoomCode;
     public static string RoomName;
     public static bool IsHost;
+
+    public static bool IsTutorial;
 }

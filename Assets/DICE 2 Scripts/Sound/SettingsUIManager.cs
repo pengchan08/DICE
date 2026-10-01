@@ -7,7 +7,6 @@ public class SettingsUIManager : MonoBehaviour
 {
     public GameObject settingsPanel;
     public Button openButton;
-    public Button closeButton;
 
     [Header("마스터 / 효과음")]
     public Slider masterSlider;
@@ -33,17 +32,13 @@ public class SettingsUIManager : MonoBehaviour
                 v => SoundSettings.SetBGM(type, v));
         }
 
-        openButton.onClick.AddListener(() => settingsPanel.SetActive(true));
-        closeButton.onClick.AddListener(() => settingsPanel.SetActive(false));
+        openButton.onClick.AddListener(Toggle);
         settingsPanel.SetActive(false);
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            settingsPanel.SetActive(!settingsPanel.activeSelf);
-        }
+        if (Input.GetKeyDown(KeyCode.Escape)) Toggle();
     }
 
     void Bind(Slider slider, Text label, float initial, System.Action<float> onChange)
@@ -63,5 +58,10 @@ public class SettingsUIManager : MonoBehaviour
     void SetLabel(Text label, float v)
     {
         if (label != null) label.text = $"{Mathf.RoundToInt(v * 100)}%";
+    }
+
+    void Toggle()
+    {
+        settingsPanel.SetActive(!settingsPanel.activeSelf);
     }
 }

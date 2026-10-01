@@ -43,6 +43,7 @@ public class GameStateManager : NetworkBehaviour
 
         if (!FirstTurnDecided)
         {
+            if (GameData.IsTutorial) { HandleTutorialStart(); return; }
             HandleFirstTurnDecision();
             return;
         }
@@ -55,6 +56,16 @@ public class GameStateManager : NetworkBehaviour
         {
             CheckRematch();
         }
+    }
+
+    void HandleTutorialStart()
+    {
+        var me = FindObjectsOfType<PlayerData>()
+            .FirstOrDefault(p => p != null && p.Object != null && p.Object.IsValid && p.Object.HasStateAuthority);
+        if (me == null) return;
+
+        CurrentTurnPlayer = me.Object.InputAuthority;
+        FirstTurnDecided = true;
     }
 
     void HandleFirstTurnDecision()
@@ -158,6 +169,9 @@ public class GameStateManager : NetworkBehaviour
 
         var firstTurnUI = FindObjectOfType<FirstTurnUIManager>(true);
         if (firstTurnUI != null) firstTurnUI.HideTexts();
+
+        if (GameData.IsTutorial && DiceGroupController3D.Instance != null)
+            DiceGroupController3D.Instance.ActivateGameplayDice();
     }
 
     void OnCardSelectionPendingChanged()
@@ -176,7 +190,7 @@ public class GameStateManager : NetworkBehaviour
         var uiManager = FindObjectOfType<GameUIManager>();
         if (uiManager != null) uiManager.RefreshTurnUI();
 
-        var banner = FindObjectOfType<TurnBannerUIManager>(true);
+        var banner = GameData.IsTutorial ? null : FindObjectOfType<TurnBannerUIManager>(true);
         if (banner != null)
         {
             var currentPlayerData = FindObjectsOfType<PlayerData>()

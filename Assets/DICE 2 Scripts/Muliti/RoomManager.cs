@@ -55,6 +55,12 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
 
     async void OnCreateRoom()
     {
+        if (!TutorialProgress.IsCompleted)
+        {
+            ShowErrorMessage("튜토리얼을 먼저 완료해주세요.");
+            return;
+        }
+
         SetAllInteractable(false);
 
         string roomCode = GenerateRoomCode();
@@ -70,6 +76,12 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
 
     async void OnJoinRoom()
     {
+        if (!TutorialProgress.IsCompleted)
+        {
+            ShowErrorMessage("튜토리얼을 먼저 완료해주세요.");
+            return;
+        }
+
         string roomCode = joinRoomCodeInput.text;
         if (string.IsNullOrEmpty(roomCode))
         {
@@ -259,6 +271,30 @@ public class RoomManager : MonoBehaviour, INetworkRunnerCallbacks
         opponentLeftText.text = "상대가 나갔습니다.";
         yield return new WaitForSeconds(2f);
         opponentLeftText.text = "";
+    }
+
+    public async Task<bool> StartTutorialSession()
+    {
+        GameData.IsTutorial = true;
+        GameData.IsHost = true;
+        GameData.PlayerName = "나";
+        GameData.RoomCode = "";
+
+        _runner = gameObject.AddComponent<NetworkRunner>();
+        _runner.ProvideInput = false;
+        _runner.AddCallbacks(this);
+
+        var result = await _runner.StartGame(new StartGameArgs { GameMode = GameMode.Single });
+
+        if (!result.Ok)
+        {
+            Destroy(_runner);
+            _runner = null;
+            GameData.IsTutorial = false;
+            ShowErrorMessage("튜토리얼을 시작하지 못했습니다.");
+            return false;
+        }
+        return true;
     }
 
     public void OnInput(NetworkRunner runner, NetworkInput input) { }
