@@ -28,6 +28,7 @@ public class ComboButtonHandler : MonoBehaviour
         if (myData != null)
         {
             myData.ApplyScore(comboIndex);
+            SFXManager.Instance.PlayCombo();
         }
     }
 

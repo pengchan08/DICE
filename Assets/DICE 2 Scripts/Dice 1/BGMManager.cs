@@ -17,6 +17,9 @@ public class BGMManager : MonoBehaviour
 
     private AudioSource audioSource;
     private AudioClip currentClip;
+    private SoundSettings.BGMType activeType = SoundSettings.BGMType.MainMenu;
+    private float fade = 1f;
+    private Coroutine fadeRoutine;
 
     void Awake()
     {
@@ -26,27 +29,41 @@ public class BGMManager : MonoBehaviour
         audioSource.loop = true;
     }
 
+    void Update()
+    {
+        audioSource.volume = fade * SoundSettings.EffectiveBGM(activeType);
+    }
+
     public void Play(AudioClip clip)
     {
         if (clip == currentClip) return;
         currentClip = clip;
-        StopAllCoroutines();
-        StartCoroutine(FadeToClip(clip));
+        if (fadeRoutine != null) StopCoroutine(fadeRoutine);
+        fadeRoutine = StartCoroutine(FadeToClip(clip, GetTypeOf(clip)));
     }
 
-    IEnumerator FadeToClip(AudioClip clip)
+    SoundSettings.BGMType GetTypeOf(AudioClip clip)
     {
-        float startVolume = audioSource.volume;
+        if (clip == waitingRoomBGM) return SoundSettings.BGMType.WaitingRoom;
+        if (clip == gameBGM) return SoundSettings.BGMType.Game;
+        if (clip == resultBGM) return SoundSettings.BGMType.Result;
+        return SoundSettings.BGMType.MainMenu;
+    }
 
+    IEnumerator FadeToClip(AudioClip clip, SoundSettings.BGMType type)
+    {
+        float start = fade;
         float t = 0f;
-        while (t < fadeTime && audioSource.volume > 0f)
+        while (t < fadeTime)
         {
             t += Time.deltaTime;
-            audioSource.volume = Mathf.Lerp(startVolume, 0f, t / fadeTime);
+            fade = Mathf.Lerp(start, 0f, t / fadeTime);
             yield return null;
         }
+        fade = 0f;
 
         audioSource.clip = clip;
+        activeType = type;
         if (clip != null) audioSource.Play();
         else audioSource.Stop();
 
@@ -54,9 +71,10 @@ public class BGMManager : MonoBehaviour
         while (t < fadeTime)
         {
             t += Time.deltaTime;
-            audioSource.volume = Mathf.Lerp(0f, startVolume, t / fadeTime);
+            fade = Mathf.Lerp(0f, 1f, t / fadeTime);
             yield return null;
         }
-        audioSource.volume = startVolume;
+        fade = 1f;
+        fadeRoutine = null;
     }
 }

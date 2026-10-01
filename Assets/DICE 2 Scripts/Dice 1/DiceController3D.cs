@@ -114,7 +114,7 @@ public class DiceController3D : NetworkBehaviour
         nudgeAttempts = 0;
 
         if (audioSource != null && diceRollClip != null)
-            audioSource.PlayOneShot(diceRollClip);
+            audioSource.PlayOneShot(diceRollClip, SoundSettings.EffectiveSFX);
 
         float dirX = Random.Range(200, 500);
         float dirY = Random.Range(200, 500);
