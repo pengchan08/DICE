@@ -57,8 +57,8 @@ public class WaitingRoomManager : MonoBehaviour
             roomName = prop.PropertyValue.ToString();
         }
 
-        roomNameText.text = "방 이름: " + roomName;
-        roomCodeText.text = "방 코드: " + GameData.RoomCode;
+        roomNameText.text = roomName;
+        roomCodeText.text = GameData.RoomCode;
     }
 
     void Start()
