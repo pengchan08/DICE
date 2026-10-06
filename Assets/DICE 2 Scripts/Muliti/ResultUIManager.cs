@@ -16,9 +16,6 @@ public class ResultUIManager : MonoBehaviour
     public CanvasGroup resultGroup;
     public float resultFadeInTime = 0.4f;
 
-    [Header("승자 강조")]
-    public float winnerScale = 1.2f;
-
     [Header("플레이어 1")]
     public Text player1NameText;
     public Text player1ScoreText;
@@ -102,9 +99,6 @@ public class ResultUIManager : MonoBehaviour
             bool p1Wins = p1.TotalScore > p2.TotalScore;
             var winner = p1Wins ? p1 : p2;
             winnerText.text = $"{winner.PlayerName} 승리!";
-
-            var winnerText1 = p1Wins ? player1NameText.transform : player2NameText.transform;
-            winnerText1.localScale = Vector3.one * winnerScale;
         }
 
         gameCanvas.SetActive(false);
