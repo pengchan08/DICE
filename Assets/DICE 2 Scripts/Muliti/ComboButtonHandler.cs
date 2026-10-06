@@ -25,11 +25,7 @@ public class ComboButtonHandler : MonoBehaviour
             .Where(p => p != null && p.Object != null && p.Object.IsValid)
             .FirstOrDefault(p => p.Object.HasStateAuthority);
 
-        if (myData != null)
-        {
-            myData.ApplyScore(comboIndex);
-            SFXManager.Instance.PlayCombo();
-        }
+        if (myData != null) myData.ApplyScore(comboIndex);
     }
 
     public void Refresh(PlayerData myData, bool isMyTurn)

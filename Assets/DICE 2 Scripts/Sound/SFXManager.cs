@@ -27,7 +27,13 @@ public class SFXManager : MonoBehaviour
     void Start()
     {
         foreach (var btn in FindObjectsOfType<Button>(true))
+        {
+            if (btn.GetComponent<AbilityCardButtonHandler>() != null) { btn.onClick.AddListener(PlayCard); continue; }
+
+            if (btn.GetComponent<ComboButtonHandler>() != null) { btn.onClick.AddListener(PlayCombo); continue; }
+
             btn.onClick.AddListener(PlayButton);
+        }
     }
 
     public void Play(AudioClip clip)

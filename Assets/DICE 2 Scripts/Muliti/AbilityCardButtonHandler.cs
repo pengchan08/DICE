@@ -5,6 +5,8 @@ using System.Linq;
 // 인스펙터에서 Button + 자식 Text 하나로 구성된 카드 버튼 오브젝트에 붙여서 사용
 public class AbilityCardButtonHandler : MonoBehaviour
 {
+    public static AbilityCardButtonHandler Instance;
+
     private Button button;
     private Text buttonText;
 
@@ -16,6 +18,7 @@ public class AbilityCardButtonHandler : MonoBehaviour
 
     void Start()
     {
+        Instance = this;
         button.onClick.AddListener(OnCardClicked);
     }
 
