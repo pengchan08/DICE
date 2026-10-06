@@ -34,13 +34,13 @@ public class ComboButtonHandler : MonoBehaviour
 
         if (myData.UsedCombos[comboIndex])
         {
-            buttonText.text = comboName + " (사용됨)";
+            buttonText.text = "(사용됨)";
             GetComponent<Button>().interactable = false;
         }
         else
         {
             int previewScore = myData.GetComboScore(comboIndex) + myData.PendingScoreBonus;
-            buttonText.text = $"{comboName} ({previewScore})";
+            buttonText.text = $"{previewScore}";
             GetComponent<Button>().interactable = isMyTurn;
         }
     }
