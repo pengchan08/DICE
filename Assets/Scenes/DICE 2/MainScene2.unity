@@ -11166,8 +11166,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a831e4979b266742925f82b69bc7539, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  buttonClick: {fileID: 0}
-  cardUse: {fileID: 0}
+  buttonClick: {fileID: 8300000, guid: dd166f17744adfa42a1fa217a11f97ed, type: 3}
+  cardUse: {fileID: 8300000, guid: 6df57f88e2973334a93a3e57273c48ba, type: 3}
   comboSelect: {fileID: 0}
 --- !u!4 &858363003
 Transform:
@@ -16668,7 +16668,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1288712590}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 858363002}
+        m_TargetAssemblyTypeName: SFXManager, Assembly-CSharp
+        m_MethodName: PlayCard
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1288712590
 MonoBehaviour:
   m_ObjectHideFlags: 0
